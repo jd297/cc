@@ -1,6 +1,7 @@
 #include "lexer_c.h"
 #include "token_type_c.h"
 #include "token_c.h"
+#include "lexer_c_keyword.h"
 
 #include <jd297/sv.h>
 
@@ -254,7 +255,12 @@ TokenType_C lexer_c_next(Lexer_C *lexer, Token_C *token)
 
 			lexer_c_set_token(lexer, token, T_IDENTIFIER);
 
-        	token->type = token_type_c_lookup_keyword(&token->view);
+			const struct lexer_c_keyword_entry *e = 
+				lexer_c_lookup_keyword(token->view.value, token->view.len);
+
+			if (e != NULL) {
+				token->type = e->type;
+			}
         } break;
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9': {

@@ -1,8 +1,6 @@
 #ifndef JD297_CC_TOKEN_TYPE_C_H
 #define JD297_CC_TOKEN_TYPE_C_H
 
-#include <jd297/sv.h>
-
 typedef enum TokenType_C {
 	T_UNKNOWN = 0, /* default type value for Token_C */
     T_MACRO_INCLUDE_FILE,
@@ -133,14 +131,5 @@ typedef enum TokenType_C {
     T_EOF,
     T_MACRO_TOKEN_SEQUENZE
 } TokenType_C;
-
-typedef struct {
-	sv_t value;
-	TokenType_C type;
-} TokenType_C_LookupEntry;
-
-extern TokenType_C token_type_c_lookup_keyword(sv_t *key);
-
-// TODO extern TokenType_C *token_type_c_lookup_preprocessor(sv_t *key);
 
 #endif

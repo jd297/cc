@@ -4,15 +4,18 @@ CC            = cc
 CFLAGS        = -Wall -Wextra -Wpedantic -g -I src
 LDFLAGS       = 
 
+PERF          = gperf
+
 TARGET        = cc
 PREFIX        = /usr/local
 BINDIR        = $(PREFIX)/bin
 MANDIR        = $(PREFIX)/share/man
 SRCDIR        = src
 BUILDDIR      = build
+DEFSDIR       = defs
 
 OBJFILES      = $(BUILDDIR)/lexer_c.o $(BUILDDIR)/lmap.o $(BUILDDIR)/parser_c.o\
-                $(BUILDDIR)/parse_tree_node_c.o $(BUILDDIR)/preprocessor_c.o $(BUILDDIR)/token_type_c.o\
+                $(BUILDDIR)/parse_tree_node_c.o $(BUILDDIR)/preprocessor_c.o\
                 $(BUILDDIR)/vector.o $(BUILDDIR)/logger.o $(BUILDDIR)/compiler_c.o\
                 $(BUILDDIR)/list.o $(BUILDDIR)/optimizer.o $(BUILDDIR)/ir.o\
                 $(BUILDDIR)/codegen_x86_64.o $(BUILDDIR)/codegen_aarch64.o\
@@ -41,8 +44,8 @@ $(BUILDDIR)/$(TARGET): $(OBJFILES) $(BUILDDIR)/cc.o
 $(BUILDDIR)/cc.o: $(HEADERS) $(SRCDIR)/cc.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/cc.c
 
-$(BUILDDIR)/lexer_c.o: $(HEADERS) $(SRCDIR)/lexer_c.c
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/lexer_c.c
+$(BUILDDIR)/lexer_c.o: $(HEADERS) $(SRCDIR)/lexer_c.c $(SRCDIR)/lexer_c_keyword.h
+	$(CC) $(CFLAGS) -Wno-missing-field-initializers -c -o $@ $(SRCDIR)/lexer_c.c
 
 $(BUILDDIR)/lmap.o: $(HEADERS) $(SRCDIR)/lmap.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/lmap.c
@@ -55,9 +58,6 @@ $(BUILDDIR)/parse_tree_node_c.o: $(HEADERS) $(SRCDIR)/parse_tree_node_c.c
 
 $(BUILDDIR)/preprocessor_c.o: $(HEADERS) $(SRCDIR)/preprocessor_c.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/preprocessor_c.c
-
-$(BUILDDIR)/token_type_c.o: $(HEADERS) $(SRCDIR)/token_type_c.c
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/token_type_c.c
 
 $(BUILDDIR)/vector.o: $(HEADERS) $(SRCDIR)/vector.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/vector.c
@@ -103,6 +103,9 @@ $(BUILDDIR)/toolchain_openbsd.o: $(HEADERS) $(SRCDIR)/toolchain_openbsd.c
 
 $(BUILDDIR)/toolchain_gnu_linux.o: $(HEADERS) $(SRCDIR)/toolchain_gnu_linux.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/toolchain_gnu_linux.c
+
+$(SRCDIR)/lexer_c_keyword.h: $(DEFSDIR)/keywords
+	$(PERF) --output-file=$@ $(DEFSDIR)/keywords
 
 clean:
 	rm -f $(BUILDDIR)/*

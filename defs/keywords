@@ -1,0 +1,44 @@
+%language=ANSI-C
+%includes
+%define hash-function-name lexer_c_hash_keyword
+%define lookup-function-name lexer_c_lookup_keyword
+%7bit
+%compare-strncmp
+%readonly-tables
+%enum
+%struct-type
+%define slot-name name
+struct lexer_c_keyword_entry { const char *name; TokenType_C type; };
+%%
+auto, T_AUTO
+break, T_BREAK
+case, T_CASE
+char, T_CHAR
+const, T_CONST
+continue, T_CONTINUE
+default, T_DEFAULT
+do, T_DO
+double, T_DOUBLE
+else, T_ELSE
+enum, T_ENUM
+extern, T_EXTERN
+float, T_FLOAT
+for, T_FOR
+goto, T_GOTO
+if, T_IF
+int, T_INT
+long, T_LONG
+register, T_REGISTER
+return, T_REGISTER
+short, T_SHORT
+signed, T_SIGNED
+sizeof, T_SIZEOF
+static, T_STATIC
+struct, T_STRUCT
+switch, T_SWITCH
+typedef, T_TYPEDEF
+union, T_UNION
+unsigned, T_UNSIGNED
+void, T_VOID
+volatile, T_VOLATILE
+while, T_WHILE
