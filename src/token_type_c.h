@@ -2,7 +2,7 @@
 #define JD297_CC_TOKEN_TYPE_C_H
 
 typedef enum TokenType_C {
-	T_UNKNOWN = 0, /* default type value for Token_C */
+	T_EOF = '\0',
     T_MACRO_INCLUDE_FILE,
 
     /* ASSIGNMENT */
@@ -26,46 +26,46 @@ typedef enum TokenType_C {
     /* LOGICAL */
     T_LOGICAL_AND,
     T_LOGICAL_OR,
-    T_LOGICAL_NOT,
+    T_LOGICAL_NOT = '!',
 
     /* BITWISE */
-    T_BITWISE_AND,
-    T_BITWISE_OR,
-    T_BITWISE_XOR,
+    T_BITWISE_AND = '&',
+    T_BITWISE_OR = '|',
+    T_BITWISE_XOR = '^',
     T_BITWISE_LEFTSHIFT,
     T_BITWISE_RIGHTSHIFT,
 
-    T_LESS_THAN,
-    T_GREATER_THAN,
+    T_LESS_THAN = '<',
+    T_GREATER_THAN = '>',
 
     /* SYMBOLS */
     T_DOT_DOT_DOT,
-    T_OPEN_BRACKET,
-    T_CLOSING_BRACKET,
-    T_OPEN_PARENT,
-    T_CLOSING_PARENT,
-    T_OPEN_BRACE,
-    T_CLOSING_BRACE,
-    T_DOT,
+    T_OPEN_BRACKET = '[',
+    T_CLOSING_BRACKET = ']',
+    T_OPEN_PARENT = '(',
+    T_CLOSING_PARENT = ')',
+    T_OPEN_BRACE = '{',
+    T_CLOSING_BRACE = '}',
+    T_DOT = '.',
     T_ARROW,
-    T_COMMA,
-    T_COLON,
-    T_SEMICOLON,
-    T_ASSIGNMENT,
-    T_TILDE,
+    T_COMMA = ',',
+    T_COLON = ':',
+    T_SEMICOLON = ';',
+    T_ASSIGNMENT = '=',
+    T_TILDE = '~',
 
     /* OPERATORS */
     /* ARITHMETRIC */
     T_INCREMENT,
     T_DECREMENT,
-    T_PLUS,
-    T_MINUS,
-    T_MULTIPLY,
-    T_DIVIDE,
-    T_MODULUS,
+    T_PLUS = '+',
+    T_MINUS = '-',
+    T_MULTIPLY = '*',
+    T_DIVIDE = '/',
+    T_MODULUS = '%',
 
     /* CONDITIONAL */
-    T_TERNARY,
+    T_TERNARY = '?',
 
     /* NORMAL KEYWORDS */
     T_AUTO,
@@ -127,9 +127,8 @@ typedef enum TokenType_C {
     T_STRING,
     T_CHARACTER_CONSTANT,
     T_IDENTIFIER,
-
-    T_EOF,
-    T_MACRO_TOKEN_SEQUENZE
+    T_MACRO_TOKEN_SEQUENZE,
+    T_UNKNOWN = 404, /* DEFAULT / FALLBACK */
 } TokenType_C;
 
 #endif
