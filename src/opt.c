@@ -1,16 +1,13 @@
+#include <assert.h>
 #include <stdlib.h>
 
 #include "ir.h"
-#include "optimizer.h"
-#include "codegen.h"
-
-#include <assert.h>
+#include "opt.h"
+#include "gen.h"
 
 extern int optimizer_func_begin(IR_CTX *ctx, list_node_t *it);
 
 extern int optimizer_func_end(IR_CTX *ctx, list_node_t *it);
-
-extern int optimizer_tac_reduction(IR_CTX *ctx, list_node_t *begin); 
 
 extern int optimizer_stack_allocation(IR_CTX *ctx, list_node_t *it);
 
@@ -41,11 +38,6 @@ int optimizer_run(IR_CTX *ctx)
 
 int optimizer_func_begin(IR_CTX *ctx, list_node_t *it)
 {
-	// TODO: removes to much code, so logically wrong :(
-	/*if (optimizer_tac_reduction(ctx, it) == -1) {
-		return -1;	
-	}*/
-
 	if (optimizer_stack_allocation(ctx, it) == -1) {
 		return -1;	
 	}
@@ -60,83 +52,6 @@ int optimizer_func_end(IR_CTX *ctx, list_node_t *it)
 	}
 
 	return 0;
-}
-
-int optimizer_tac_reduction(IR_CTX *ctx, list_node_t *begin)
-{
-	for (list_node_t *it = begin; it != list_end(ctx->code); ) {
-		IRCode *code = it->value;
-		
-		switch (code->op) {
-			case IR_OC_FUNC_END: {
-				return 0;
-			} break;
-			case IR_OC_LOAD:
-			case IR_OC_STORE: {
-				if (
-					(code->result->type == IR_ATYPE_NUM || code->result->type == IR_ATYPE_STACK || code->result->type == IR_ATYPE_ADDR) 
-						&& 
-					(code->arg1->type == IR_ATYPE_NUM || code->arg1->type == IR_ATYPE_STACK || code->arg1->type == IR_ATYPE_ADDR)
-				) {
-					IRSSAEnt *needle, *replacement;
-					
-					switch (code->op) {
-						case IR_OC_LOAD: {
-							needle = code->result;
-							replacement = code->arg1;
-							
-							for (list_node_t *haystack = list_next(begin); ((IRCode *)haystack->value)->op != IR_OC_FUNC_END; haystack = list_next(haystack)) {
-								IRCode *code = haystack->value;
-
-								if (code->result == needle) {
-									code->result = replacement;
-								}
-								
-								if (code->arg1 == needle) {
-									code->arg1 = replacement;
-								}
-								
-								if (code->arg2 == needle) {
-									code->arg2 = replacement;
-								}
-							}
-						} break;
-						case IR_OC_STORE: {
-							needle = code->arg1;
-							replacement = code->result;
-							
-							for (list_node_t *haystack = list_next(begin); ((IRCode *)haystack->value)->op != IR_OC_FUNC_END; haystack = list_next(haystack)) {
-								IRCode *code = haystack->value;
-
-								if (code->result == needle) {
-									code->result = replacement;
-								}
-								
-								if (code->arg1 == needle) {
-									code->arg1 = replacement;
-								}
-								
-								if (code->arg2 == needle) {
-									code->arg2 = replacement;
-								}
-							}
-						} break;
-						default:
-							assert(0 && "NOT REACHABLE");
-					}
-
-					it = list_erase(ctx->code, it);
-					
-					break;
-				}
-			} // NO BREAK
-			default: {
-				it = list_next(it);
-			} break;
-		}
-	}
-
-	return -1;
 }
 
 int optimizer_stack_allocation(IR_CTX *ctx, list_node_t *begin)

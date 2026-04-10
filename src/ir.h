@@ -5,8 +5,35 @@
 
 #include <jd297/sv.h>
 #include <jd297/list.h>
-#include <jd297/vector.h>
 #include <jd297/lmap_sv.h>
+
+typedef struct IRDataType IRDataType;
+
+typedef enum {
+	IR_GENERIC_CHAR,
+	IR_GENERIC_SIGNED_CHAR,
+	IR_GENERIC_UNSIGNED_CHAR,
+	IR_GENERIC_SHORT,
+	IR_GENERIC_SHORT_INT,
+	IR_GENERIC_SIGNED_SHORT,
+	IR_GENERIC_SIGNED_SHORT_INT,
+	IR_GENERIC_UNSIGNED_SHORT,
+	IR_GENERIC_UNSIGNED_SHORT_INT,
+	IR_GENERIC_INT,
+	IR_GENERIC_SIGNED,
+	IR_GENERIC_SIGNED_INT,
+	IR_GENERIC_UNSIGNED,
+	IR_GENERIC_UNSIGNED_INT,
+	IR_GENERIC_LONG,
+	IR_GENERIC_LONG_INT,
+	IR_GENERIC_SIGNED_LONG,
+	IR_GENERIC_SIGNED_LONG_INT,
+	IR_GENERIC_UNSIGNED_LONG,
+	IR_GENERIC_UNSIGNED_LONG_INT,
+	IR_GENERIC_FLOAT,
+	IR_GENERIC_DOUBLE,
+	IR_GENERIC_LONG_DOUBLE
+} IRGenericPrimitiveDataType;
 
 typedef enum {
 	IR_U8_T,
@@ -19,8 +46,65 @@ typedef enum {
 	IR_S64_T,
 	IR_F32_T,
 	IR_F64_T,
-	IR_PTR_T,
-} IRPrimitiveType;
+	IR_F128_T,
+	IR_PTR_T
+} IRPrimitiveDataType;
+
+typedef struct {
+	size_t offset;
+	IRDataType *to;
+} IRStructEntry;
+
+typedef struct {
+	size_t size;
+	lmap_sv_t *entries; /* TODO ?? */
+} IRStructDataType;
+
+typedef struct {
+	size_t size;
+	IRDataType *to;
+} IRArrayDataType;
+
+typedef struct {
+	IRDataType *to;
+} IRPointerDataType;
+
+typedef enum {
+	IR_TYPE_PRIMITIVE,
+	IR_TYPE_ENUM,
+	IR_TYPE_STRUCT,
+	IR_TYPE_ARRAY,
+	IR_TYPE_POINTER,
+	IR_TYPE_NONE
+} IRDataArgType;
+
+#define IR_QUALIFIER_FLAG_NONE     0x00
+#define IR_QUALIFIER_FLAG_CONST    0x01
+#define IR_QUALIFIER_FLAG_VOLATILE 0x02
+
+#define IR_STORAGE_FLAG_NONE       0x00
+#define IR_STORAGE_FLAG_AUTO       0x01
+#define IR_STORAGE_FLAG_REGISTER   0x02
+#define IR_STORAGE_FLAG_STATIC     0x04
+#define IR_STORAGE_FLAG_EXTERN     0x08
+#define IR_STORAGE_FLAG_TYPEDEF    0x10
+
+struct IRDataType {
+	IRDataArgType type;
+
+	int qualifier_flags;
+	int storage_flags;
+
+	union {
+		IRPrimitiveDataType primitive;
+		lmap_sv_t *enumeration;
+		IRStructDataType *structure;
+		IRArrayDataType array;
+		IRPointerDataType pointer;
+	} as;
+};
+
+IRDataType *ir_dtype_from_primitive(IRPrimitiveDataType primitive, int qualifier_flags, int storage_flags);
 
 typedef union {
 	int d;
@@ -42,52 +126,11 @@ extern IRLiteral ir_literal_from_lf(double d);
 extern IRLiteral ir_literal_from_Lf(long double Lf);
 extern IRLiteral ir_literal_from_sv(sv_t sv);
 
-typedef enum {
-	IR_SYMUSE_FUNCTION,
-	IR_SYMUSE_LABEL,
-	IR_SYMUSE_LOCAL,
-	IR_SYMUSE_DATA,
-	IR_SYMUSE_CLASS,
-} IRSymTblEntUse;
-
-typedef struct {
-	sv_t *id;
-	IRPrimitiveType type;
-	IRSymTblEntUse use;
-	size_t addr;
-	// Lexer_Location_C loc;
-} IRSymTblEnt;
-
-typedef struct IRSymTbl {
-	sv_t *id;
-	struct IRSymTbl *parent;
-	lmap_sv_t entries;
-	lmap_sv_t labels;
-	/* TODO maybe */
-	/* lmap_sv_t locals; */
-	/* lmap_sv_t ...; */
-} IRSymTbl;
-
-extern vector_t ir_symtbl_refs;
-
-extern IRSymTbl *ir_symtbl_create(sv_t *id, IRSymTbl *parent);
-
-extern void ir_symtbl_free(IRSymTbl *tbl);
-
-extern IRSymTblEnt *ir_symtbl_add_entry(IRSymTbl *tbl, sv_t *id, IRPrimitiveType type, IRSymTblEntUse use);
-
-extern IRSymTblEnt *ir_symtbl_get(IRSymTbl *tbl, sv_t *id, IRSymTblEntUse use);
-
-extern IRSymTblEnt *ir_symtbl_function(IRSymTbl *tbl);
-
-extern IRSymTbl *ir_symtbl_current_function(IRSymTbl *tbl);
-
 typedef struct IRSSAEnt IRSSAEnt;
 
 typedef struct {
 	list_t *code;
 	list_t *ssa;
-	IRSymTbl *symtbl;
 	IRSSAEnt *ssa_latest;
 	IRSSAEnt *switch_expression;
 	list_node_t *switch_stmt_section;
@@ -101,9 +144,10 @@ typedef struct {
 	size_t label_select_begin;
 	size_t label_select_end;
 	size_t label_str;
+	IRDataType *function_return_type;
 } IR_CTX;
 
-extern IR_CTX *ir_ctx_create(IRSymTbl *symtbl);
+extern IR_CTX *ir_ctx_create(void);
 extern void ir_ctx_destroy(IR_CTX *ctx);
 
 typedef enum {
@@ -142,7 +186,7 @@ typedef enum {
 	IR_OC_PARAM,
 	IR_OC_CALL,
 	IR_OC_STRING,
-	IR_OC_LOAD_STRING,
+	IR_OC_LOAD_STRING
 } IROpCode;
 
 typedef enum {
@@ -176,7 +220,7 @@ struct IRSSAEnt {
 
 typedef struct {
 	IROpCode op;
-	IRPrimitiveType ptype;
+	IRDataType *dtype;
 	IRSSAEnt *arg1;
 	IRSSAEnt *arg2;
 	IRSSAEnt *result;
@@ -193,7 +237,7 @@ extern IRSSAEnt *ir_ssa_from_literal(IR_CTX *ctx, IRLiteral literal);
 extern IRSSAEnt *ir_ssa_from_reg(IR_CTX *ctx, size_t reg);
 extern IRSSAEnt *ir_ssa_from_ssa(IR_CTX *ctx, IRSSAEnt *ssa);
 
-extern void ir_emit(IR_CTX *ctx, IROpCode op, IRPrimitiveType ptype, IRSSAEnt *result, IRSSAEnt *arg1, IRSSAEnt *arg2);
+extern void ir_emit(IR_CTX *ctx, IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, IRSSAEnt *arg2);
 
 #endif
 

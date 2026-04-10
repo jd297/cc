@@ -12,9 +12,9 @@
 #include <jd297/vector.h>
 
 #include "toolchain.h"
-#include "preprocessor_c.h"
-#include "compiler_c.h"
-#include "codegen.h"
+#include "cpp.h"
+#include "comp.h"
+#include "gen.h"
 
 #define CC_TEMPLATE_PATH "%s/%s-XXXXXXXXXX%s"
 

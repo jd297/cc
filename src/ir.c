@@ -1,16 +1,26 @@
 #include <assert.h>
-#include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 #include <jd297/sv.h>
 #include <jd297/list.h>
 #include <jd297/lmap_sv.h>
-#include <jd297/vector.h>
 
 #include "ir.h"
+
+IRDataType *ir_dtype_from_primitive(IRPrimitiveDataType primitive, int qualifier_flags, int storage_flags)
+{
+	IRDataType *dtype = malloc(sizeof(IRDataType));
+
+	assert(dtype != NULL);
+
+	dtype->type = IR_TYPE_PRIMITIVE;
+	dtype->qualifier_flags = qualifier_flags;
+	dtype->storage_flags = storage_flags;
+	dtype->as.primitive = primitive;
+
+	return dtype;
+}
 
 IRLiteral ir_literal_from_d(int d)
 {
@@ -84,151 +94,7 @@ IRLiteral ir_literal_from_sv(sv_t sv)
 	return lit;
 }
 
-vector_t ir_symtbl_refs;
-
-IRSymTbl *ir_symtbl_create(sv_t *id, IRSymTbl *parent)
-{
-	IRSymTbl *tbl = calloc(1, sizeof(IRSymTbl));
-
-	if (tbl == NULL) {
-		return NULL;
-	}
-
-	tbl->id = id;
-	tbl->parent = parent;
-
-	vec_push_back(&ir_symtbl_refs, tbl);
-
-	return tbl;
-}
-
-void ir_symtbl_free(IRSymTbl *tbl)
-{
-	lmap_sv_free(&tbl->entries);
-	lmap_sv_free(&tbl->labels);
-
-	free(tbl);
-}
-
-IRSymTblEnt *ir_symtbl_add_entry(IRSymTbl *tbl, sv_t *id, IRPrimitiveType type, IRSymTblEntUse use)
-{
-	IRSymTblEnt *ent = calloc(1, sizeof(IRSymTblEnt));
-
-	if (ent == NULL) {
-		return NULL;	
-	}
-
-	ent->id = id;
-	ent->type = type;
-	ent->use = use;
-
-	switch (use) {
-		case IR_SYMUSE_LABEL: {
-			IRSymTbl *func_tbl;
-			
-			func_tbl = ir_symtbl_current_function(tbl);
-
-			if (func_tbl == NULL) {
-				return NULL;
-			}
-			
-			if (lmap_sv_add(&func_tbl->labels, id, ent) == -1) {
-				free(ent);
-				
-				return NULL;
-			}
-		} break;
-		default: {
-			if (lmap_sv_add(&tbl->entries, id, ent) == -1) {
-				free(ent);
-				
-				return NULL;
-			}
-		} break;
-	}
-	
-	return ent;
-}
-
-IRSymTblEnt *ir_symtbl_get(IRSymTbl *tbl, sv_t *id, IRSymTblEntUse use)
-{
-	IRSymTblEnt *ent;
-	
-	switch (use) {
-		case IR_SYMUSE_LABEL:
-			ent = lmap_sv_get(&tbl->labels, id);
-			break;
-		default:
-			ent = lmap_sv_get(&tbl->entries, id);
-			break;
-	}
-
-	if (ent != NULL) {
-		return ent;
-	}
-
-	if (tbl->parent == NULL) {
-		return NULL;
-	}
-
-	return ir_symtbl_get(tbl->parent, id, use);
-}
-
-IRSymTblEnt *ir_symtbl_function(IRSymTbl *tbl)
-{
-	if (tbl->id == NULL) {
-		if (tbl->parent == NULL) {
-			return NULL;
-		}
-
-		return ir_symtbl_function(tbl->parent);
-	}
-
-	IRSymTblEnt *ent = ir_symtbl_get(tbl, tbl->id, IR_SYMUSE_FUNCTION);
-
-	if (ent == NULL) {
-		return NULL;
-	}
-
-	if (ent->use == IR_SYMUSE_FUNCTION) {
-		return ent;
-	}
-
-	return ir_symtbl_function(tbl->parent);
-}
-
-IRSymTbl *ir_symtbl_current_function(IRSymTbl *tbl)
-{
-	IRSymTbl *func_tbl = tbl;
-
-	while (1) {
-		if (func_tbl->id == NULL) {
-			if (func_tbl->parent == NULL) {
-				return NULL;
-			}
-
-			func_tbl = func_tbl->parent;
-
-			continue;
-		}
-
-		IRSymTblEnt *ent = ir_symtbl_get(func_tbl, func_tbl->id, IR_SYMUSE_FUNCTION);
-
-		if (ent == NULL) {
-			return NULL;
-		}
-
-		if (ent->use == IR_SYMUSE_FUNCTION) {
-			return func_tbl;
-		}
-		
-		func_tbl = func_tbl->parent;
-	}
-	
-	return NULL;
-}
-
-IR_CTX *ir_ctx_create(IRSymTbl *symtbl)
+IR_CTX *ir_ctx_create(void)
 {
 	IR_CTX *ctx;
 	list_t *code;
@@ -254,7 +120,6 @@ IR_CTX *ir_ctx_create(IRSymTbl *symtbl)
 
 	ctx->code = code;
 	ctx->ssa = ssa;
-	ctx->symtbl = symtbl;
 	
 	return ctx;
 }
@@ -278,7 +143,6 @@ void ir_ctx_destroy(IR_CTX *ctx)
 IRSSAEnt *ir_ssa_latest(IR_CTX *ctx)
 {
 	return ctx->ssa_latest;
-	// return (IRSSAEnt *)list_prev(list_end(ctx->ssa))->value;
 }
 
 IRSSAEnt *ir_ssa_default(IR_CTX *ctx)
@@ -389,7 +253,7 @@ IRSSAEnt *ir_ssa_from_ssa(IR_CTX *ctx, IRSSAEnt *ssa)
 	return ent;
 }
 
-void ir_emit(IR_CTX *ctx, IROpCode op, IRPrimitiveType ptype, IRSSAEnt *result, IRSSAEnt *arg1, IRSSAEnt *arg2)
+void ir_emit(IR_CTX *ctx, IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, IRSSAEnt *arg2)
 {
 	IRCode *code;
 
@@ -400,7 +264,7 @@ void ir_emit(IR_CTX *ctx, IROpCode op, IRPrimitiveType ptype, IRSSAEnt *result, 
 	assert(code != NULL);
 
 	code->op = op;
-	code->ptype = ptype;
+	code->dtype = dtype;
 	code->arg1 = arg1;
 	code->arg2 = arg2;
 	code->result = result;

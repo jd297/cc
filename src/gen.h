@@ -9,7 +9,9 @@ typedef void (*codegen_run_func)(IR_CTX *ctx, FILE *output);
 
 extern codegen_run_func codegen_func;
 
-extern size_t codegen_get_type_size(IRPrimitiveType type);
+extern IRPrimitiveDataType codegen_get_primitive_data_type(IRGenericPrimitiveDataType gtype);
+
+extern size_t codegen_get_type_size(IRDataType *dtype);
 
 extern void codegen_x86_64_run(IR_CTX *ctx, FILE *output);
 

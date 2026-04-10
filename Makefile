@@ -14,26 +14,26 @@ SRCDIR        = src
 BUILDDIR      = build
 DEFSDIR       = defs
 
-OBJFILES      = $(BUILDDIR)/lexer_c.o $(BUILDDIR)/lmap.o $(BUILDDIR)/parser_c.o\
-                $(BUILDDIR)/parse_tree_node_c.o $(BUILDDIR)/preprocessor_c.o\
-                $(BUILDDIR)/vector.o $(BUILDDIR)/logger.o $(BUILDDIR)/compiler_c.o\
-                $(BUILDDIR)/list.o $(BUILDDIR)/optimizer.o $(BUILDDIR)/ir.o\
-                $(BUILDDIR)/codegen_x86_64.o $(BUILDDIR)/codegen_aarch64.o\
-                $(BUILDDIR)/codegen.o\
+OBJFILES      = $(BUILDDIR)/lex.o $(BUILDDIR)/lmap.o $(BUILDDIR)/parse.o\
+                $(BUILDDIR)/cpp.o\
+                $(BUILDDIR)/vector.o $(BUILDDIR)/logger.o $(BUILDDIR)/comp.o\
+                $(BUILDDIR)/list.o $(BUILDDIR)/opt.o $(BUILDDIR)/ir.o\
+                $(BUILDDIR)/x86_64.o $(BUILDDIR)/aarch64.o\
+                $(BUILDDIR)/gen.o\
                 $(BUILDDIR)/sv.o $(BUILDDIR)/lmap_sv.o\
                 $(BUILDDIR)/toolchain.o\
-                $(BUILDDIR)/toolchain_openbsd.o $(BUILDDIR)/toolchain_gnu_linux.o\
-                $(BUILDDIR)/irgen_c.o
+                $(BUILDDIR)/OpenBSD.o $(BUILDDIR)/GNULinux.o\
+                $(BUILDDIR)/irgen.o $(BUILDDIR)/sem.o\
+                $(BUILDDIR)/symtbl.o
 
 HEADERS       = $(SRCDIR)/jd297/lmap.h $(SRCDIR)/jd297/vector.h\
-                $(SRCDIR)/lexer_c.h $(SRCDIR)/parser_c.h\
-                $(SRCDIR)/parse_tree_node_c.h  $(SRCDIR)/parse_tree_type_c.h\
-                $(SRCDIR)/preprocessor_c.h $(SRCDIR)/token_c.h\
-                $(SRCDIR)/token_type_c.h $(SRCDIR)/jd297/logger.h\
-                $(SRCDIR)/compiler_c.h $(SRCDIR)/jd297/list.h\
-                $(SRCDIR)/optimizer.h $(SRCDIR)/ir.h $(SRCDIR)/codegen.h\
+                $(SRCDIR)/lex.h $(SRCDIR)/parse.h\
+                $(SRCDIR)/cpp.h $(SRCDIR)/tok.h\
+                $(SRCDIR)/jd297/logger.h\
+                $(SRCDIR)/comp.h $(SRCDIR)/jd297/list.h\
+                $(SRCDIR)/opt.h $(SRCDIR)/ir.h $(SRCDIR)/gen.h\
                 $(SRCDIR)/jd297/sv.h $(SRCDIR)/jd297/lmap_sv.h\
-                $(SRCDIR)/toolchain.h $(SRCDIR)/irgen_c.h $(SRCDIR)/semantic_c.h\
+                $(SRCDIR)/toolchain.h $(SRCDIR)/irgen.h $(SRCDIR)/sem.h\
                 $(SRCDIR)/symtbl.h
 
 all: $(BUILDDIR)/$(TARGET)
@@ -44,20 +44,17 @@ $(BUILDDIR)/$(TARGET): $(OBJFILES) $(BUILDDIR)/cc.o
 $(BUILDDIR)/cc.o: $(HEADERS) $(SRCDIR)/cc.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/cc.c
 
-$(BUILDDIR)/lexer_c.o: $(HEADERS) $(SRCDIR)/lexer_c.c $(SRCDIR)/lexer_c_keyword.h
-	$(CC) $(CFLAGS) -Wno-missing-field-initializers -c -o $@ $(SRCDIR)/lexer_c.c
+$(BUILDDIR)/lex.o: $(HEADERS) $(SRCDIR)/lex.c $(SRCDIR)/lex_kw.h
+	$(CC) $(CFLAGS) -Wno-missing-field-initializers -c -o $@ $(SRCDIR)/lex.c
 
 $(BUILDDIR)/lmap.o: $(HEADERS) $(SRCDIR)/lmap.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/lmap.c
 
-$(BUILDDIR)/parser_c.o: $(HEADERS) $(SRCDIR)/parser_c.c
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/parser_c.c
+$(BUILDDIR)/parse.o: $(HEADERS) $(SRCDIR)/parse.c
+	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/parse.c
 
-$(BUILDDIR)/parse_tree_node_c.o: $(HEADERS) $(SRCDIR)/parse_tree_node_c.c
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/parse_tree_node_c.c
-
-$(BUILDDIR)/preprocessor_c.o: $(HEADERS) $(SRCDIR)/preprocessor_c.c
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/preprocessor_c.c
+$(BUILDDIR)/cpp.o: $(HEADERS) $(SRCDIR)/cpp.c
+	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/cpp.c
 
 $(BUILDDIR)/vector.o: $(HEADERS) $(SRCDIR)/vector.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/vector.c
@@ -65,29 +62,26 @@ $(BUILDDIR)/vector.o: $(HEADERS) $(SRCDIR)/vector.c
 $(BUILDDIR)/logger.o: $(HEADERS) $(SRCDIR)/logger.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/logger.c
 
-$(BUILDDIR)/compiler_c.o: $(HEADERS) $(SRCDIR)/compiler_c.c
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/compiler_c.c
+$(BUILDDIR)/comp.o: $(HEADERS) $(SRCDIR)/comp.c
+	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/comp.c
 
 $(BUILDDIR)/list.o: $(HEADERS) $(SRCDIR)/list.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/list.c
 
-$(BUILDDIR)/optimizer.o: $(HEADERS) $(SRCDIR)/optimizer.c
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/optimizer.c
+$(BUILDDIR)/opt.o: $(HEADERS) $(SRCDIR)/opt.c
+	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/opt.c
 
 $(BUILDDIR)/ir.o: $(HEADERS) $(SRCDIR)/ir.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/ir.c
 
-$(BUILDDIR)/irgen_c.o: $(HEADERS) $(SRCDIR)/irgen_c.c
-	$(CC) $(CFLAGS) -Wno-unused-function -c -o $@ $(SRCDIR)/irgen_c.c
+$(BUILDDIR)/symtbl.o: $(HEADERS) $(SRCDIR)/symtbl.c
+	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/symtbl.c
 
-$(BUILDDIR)/codegen.o: $(HEADERS) $(SRCDIR)/codegen.c
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/codegen.c
+$(BUILDDIR)/irgen.o: $(HEADERS) $(SRCDIR)/irgen.c
+	$(CC) $(CFLAGS) -Wno-unused-function -c -o $@ $(SRCDIR)/irgen.c
 
-$(BUILDDIR)/codegen_x86_64.o: $(HEADERS) $(SRCDIR)/codegen_x86_64.c
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/codegen_x86_64.c
-
-$(BUILDDIR)/codegen_aarch64.o: $(HEADERS) $(SRCDIR)/codegen_aarch64.c
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/codegen_aarch64.c
+$(BUILDDIR)/sem.o: $(HEADERS) $(SRCDIR)/sem.c
+	$(CC) $(CFLAGS) -Wno-unused-function -c -o $@ $(SRCDIR)/sem.c
 
 $(BUILDDIR)/sv.o: $(HEADERS) $(SRCDIR)/sv.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/sv.c
@@ -98,14 +92,23 @@ $(BUILDDIR)/lmap_sv.o: $(HEADERS) $(SRCDIR)/lmap_sv.c
 $(BUILDDIR)/toolchain.o: $(HEADERS) $(SRCDIR)/toolchain.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/toolchain.c
 
-$(BUILDDIR)/toolchain_openbsd.o: $(HEADERS) $(SRCDIR)/toolchain_openbsd.c
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/toolchain_openbsd.c
+$(BUILDDIR)/OpenBSD.o: $(HEADERS) $(SRCDIR)/toolchain/OpenBSD.c
+	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/toolchain/OpenBSD.c
 
-$(BUILDDIR)/toolchain_gnu_linux.o: $(HEADERS) $(SRCDIR)/toolchain_gnu_linux.c
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/toolchain_gnu_linux.c
+$(BUILDDIR)/GNULinux.o: $(HEADERS) $(SRCDIR)/toolchain/GNULinux.c
+	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/toolchain/GNULinux.c
 
-$(SRCDIR)/lexer_c_keyword.h: $(DEFSDIR)/keywords
+$(SRCDIR)/lex_kw.h: $(DEFSDIR)/keywords
 	$(PERF) --output-file=$@ $(DEFSDIR)/keywords
+
+$(BUILDDIR)/gen.o: $(HEADERS) $(SRCDIR)/gen.c
+	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/gen.c
+
+$(BUILDDIR)/x86_64.o: $(HEADERS) $(SRCDIR)/gen/x86_64.c
+	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/gen/x86_64.c
+
+$(BUILDDIR)/aarch64.o: $(HEADERS) $(SRCDIR)/gen/aarch64.c
+	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/gen/aarch64.c
 
 clean:
 	rm -f $(BUILDDIR)/*

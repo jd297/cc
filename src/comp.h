@@ -4,8 +4,6 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "parse_tree_node_c.h"
-
 typedef struct {
 	FILE *input;
     FILE *output;

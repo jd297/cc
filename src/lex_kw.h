@@ -1,5 +1,5 @@
 /* ANSI-C code produced by gperf version 3.1 */
-/* Command-line: gperf --output-file=src/lexer_c_keyword.h defs/keywords  */
+/* Command-line: gperf --output-file=src/lex_kw.h defs/keywords  */
 /* Computed positions: -k'1,3' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
@@ -29,8 +29,11 @@
 #error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gperf@gnu.org>."
 #endif
 
-#line 11 "defs/keywords"
-struct lexer_c_keyword_entry { const char *name; TokenType_C type; };
+#line 1 "defs/keywords"
+
+#include "tok.h"
+#line 15 "defs/keywords"
+struct lex_kw_entry { const char *name; TokType type; };
 #include <string.h>
 /* maximum key range = 42, duplicates = 0 */
 
@@ -42,7 +45,7 @@ inline
 #endif
 #endif
 static unsigned int
-lexer_c_hash_keyword (register const char *str, register size_t len)
+lex_hash_kw (register const char *str, register size_t len)
 {
   static const unsigned char asso_values[] =
     {
@@ -75,8 +78,8 @@ lexer_c_hash_keyword (register const char *str, register size_t len)
   return hval;
 }
 
-const struct lexer_c_keyword_entry *
-lexer_c_lookup_keyword (register const char *str, register size_t len)
+const struct lex_kw_entry *
+lex_lookup_kw (register const char *str, register size_t len)
 {
   enum
     {
@@ -87,84 +90,84 @@ lexer_c_lookup_keyword (register const char *str, register size_t len)
       MAX_HASH_VALUE = 44
     };
 
-  static const struct lexer_c_keyword_entry wordlist[] =
+  static const struct lex_kw_entry wordlist[] =
     {
       {""}, {""}, {""},
-#line 26 "defs/keywords"
+#line 30 "defs/keywords"
       {"for", T_FOR},
       {""}, {""},
+#line 36 "defs/keywords"
+      {"return", T_RETURN},
 #line 32 "defs/keywords"
-      {"return", T_REGISTER},
-#line 28 "defs/keywords"
       {"if", T_IF},
-#line 29 "defs/keywords"
+#line 33 "defs/keywords"
       {"int", T_INT},
-#line 42 "defs/keywords"
+#line 46 "defs/keywords"
       {"void", T_VOID},
-#line 40 "defs/keywords"
+#line 44 "defs/keywords"
       {"union", T_UNION},
-#line 37 "defs/keywords"
-      {"struct", T_STRUCT},
-#line 39 "defs/keywords"
-      {"typedef", T_TYPEDEF},
 #line 41 "defs/keywords"
+      {"struct", T_STRUCT},
+#line 43 "defs/keywords"
+      {"typedef", T_TYPEDEF},
+#line 45 "defs/keywords"
       {"unsigned", T_UNSIGNED},
-#line 27 "defs/keywords"
+#line 31 "defs/keywords"
       {"goto", T_GOTO},
-#line 25 "defs/keywords"
+#line 29 "defs/keywords"
       {"float", T_FLOAT},
-#line 38 "defs/keywords"
+#line 42 "defs/keywords"
       {"switch", T_SWITCH},
       {""},
-#line 31 "defs/keywords"
+#line 35 "defs/keywords"
       {"register", T_REGISTER},
-#line 15 "defs/keywords"
+#line 19 "defs/keywords"
       {"case", T_CASE},
-#line 33 "defs/keywords"
+#line 37 "defs/keywords"
       {"short", T_SHORT},
-#line 34 "defs/keywords"
+#line 38 "defs/keywords"
       {"signed", T_SIGNED},
       {""}, {""},
-#line 23 "defs/keywords"
+#line 27 "defs/keywords"
       {"enum", T_ENUM},
-#line 17 "defs/keywords"
-      {"const", T_CONST},
-#line 24 "defs/keywords"
-      {"extern", T_EXTERN},
-#line 20 "defs/keywords"
-      {"do", T_DO},
-#line 18 "defs/keywords"
-      {"continue", T_CONTINUE},
-#line 22 "defs/keywords"
-      {"else", T_ELSE},
-#line 44 "defs/keywords"
-      {"while", T_WHILE},
 #line 21 "defs/keywords"
+      {"const", T_CONST},
+#line 28 "defs/keywords"
+      {"extern", T_EXTERN},
+#line 24 "defs/keywords"
+      {"do", T_DO},
+#line 22 "defs/keywords"
+      {"continue", T_CONTINUE},
+#line 26 "defs/keywords"
+      {"else", T_ELSE},
+#line 48 "defs/keywords"
+      {"while", T_WHILE},
+#line 25 "defs/keywords"
       {"double", T_DOUBLE},
-#line 19 "defs/keywords"
+#line 23 "defs/keywords"
       {"default", T_DEFAULT},
-#line 43 "defs/keywords"
+#line 47 "defs/keywords"
       {"volatile", T_VOLATILE},
-#line 13 "defs/keywords"
+#line 17 "defs/keywords"
       {"auto", T_AUTO},
-#line 14 "defs/keywords"
+#line 18 "defs/keywords"
       {"break", T_BREAK},
-#line 35 "defs/keywords"
+#line 39 "defs/keywords"
       {"sizeof", T_SIZEOF},
       {""}, {""},
-#line 30 "defs/keywords"
+#line 34 "defs/keywords"
       {"long", T_LONG},
       {""},
-#line 36 "defs/keywords"
+#line 40 "defs/keywords"
       {"static", T_STATIC},
       {""}, {""},
-#line 16 "defs/keywords"
+#line 20 "defs/keywords"
       {"char", T_CHAR}
     };
 
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
     {
-      register unsigned int key = lexer_c_hash_keyword (str, len);
+      register unsigned int key = lex_hash_kw (str, len);
 
       if (key <= MAX_HASH_VALUE)
         {

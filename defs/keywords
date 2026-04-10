@@ -1,14 +1,18 @@
+%{
+#include "tok.h"
+%}
+
 %language=ANSI-C
 %includes
-%define hash-function-name lexer_c_hash_keyword
-%define lookup-function-name lexer_c_lookup_keyword
+%define hash-function-name lex_hash_kw
+%define lookup-function-name lex_lookup_kw
 %7bit
 %compare-strncmp
 %readonly-tables
 %enum
 %struct-type
 %define slot-name name
-struct lexer_c_keyword_entry { const char *name; TokenType_C type; };
+struct lex_kw_entry { const char *name; TokType type; };
 %%
 auto, T_AUTO
 break, T_BREAK

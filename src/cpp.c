@@ -10,18 +10,16 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include <jd297/lex.h>
 #include <jd297/lmap.h>
 #include <jd297/vector.h>
 #include <jd297/logger.h>
 #include <jd297/sv.h>
 #include <jd297/lmap_sv.h>
 
-#include "lexer_c.h"
-#include "parse_tree_type_c.h"
-#include "parser_c.h"
-#include "preprocessor_c.h"
-#include "token_c.h"
-#include "token_type_c.h"
+#include "parse.h"
+#include "cpp.h"
+#include "tok.h"
 
 int preprocessor_c_run(Preprocessor_C *preprocessor)
 {
@@ -36,6 +34,7 @@ int preprocessor_c_run(Preprocessor_C *preprocessor)
 
 int preprocessor_c_parse_file(Preprocessor_C *preprocessor, const char* pathname)
 {
+	/* TODO USE fread */
     struct stat sb;
     int fd;
     char *src = NULL;
@@ -57,7 +56,7 @@ int preprocessor_c_parse_file(Preprocessor_C *preprocessor, const char* pathname
 	if (close(fd) == -1) {
 		return -1;
 	}
-
+	#ifndef JD297_CC_PREPROCESSOR_C_H____DISABLED
 	Lexer_C lexer;
 	
 	lexer_c_create(&lexer, sv_from_cstr(pathname), src, LEXER_MODE_NORMAL);
@@ -67,11 +66,17 @@ int preprocessor_c_parse_file(Preprocessor_C *preprocessor, const char* pathname
     int parse_next_result;
 
     parse_next_result = preprocessor_c_parse_lexer(preprocessor, &lexer, src + sb.st_size);
+    #else
+	int parse_next_result = 0;
+    fprintf(preprocessor->output, "%s", src);
+    #endif
 
     munmap(src, sb.st_size);
 
     return parse_next_result;
 }
+
+#ifndef JD297_CC_PREPROCESSOR_C_H____DISABLED
 
 int preprocessor_c_parse_lexer(Preprocessor_C *preprocessor, Lexer_C *lexer, const char* end)
 {
@@ -327,8 +332,7 @@ int preprocessor_c_parse_conditional(Preprocessor_C *preprocessor, Lexer_C *lexe
 
 	Parser_C_CTX parser_ctx = {
 		.error_count = 0,
-		.lexer = lexer,
-		.symtbl = NULL, /* symtbl_root */
+		.lexer = lexer
 	};
 
     ParseTreeNode_C *conditional = parser_c_parse_preprocessor_conditional(&parser_ctx);
@@ -420,3 +424,5 @@ int preprocessor_c_parse_error(Preprocessor_C *preprocessor, Lexer_C *lexer, Tok
 
     return -1;
 }
+
+#endif

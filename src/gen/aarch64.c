@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include "ir.h"
-#include "codegen.h"
+#include "gen.h"
 
 void codegen_aarch64_run(IR_CTX *ctx, FILE *output)
 {
