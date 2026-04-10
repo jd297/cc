@@ -29,7 +29,7 @@ if, T_IF
 int, T_INT
 long, T_LONG
 register, T_REGISTER
-return, T_REGISTER
+return, T_RETURN
 short, T_SHORT
 signed, T_SIGNED
 sizeof, T_SIZEOF
