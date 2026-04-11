@@ -7,7 +7,7 @@
 
 extern Tok lex_tok;
 
-#define lex_tell() yytext
+extern char *lex_tell(void);
 
 extern void lex_setpos(char *pos);
 

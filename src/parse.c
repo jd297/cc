@@ -364,7 +364,6 @@ ERROR:
 static ParseTreeNode *parse_typedef_name(void)
 {
     ParseTreeNode *this_node = parse_tree_node_create(TYPEDEF_NAME, NULL);
-
     ParseTreeNode *identifier;
 
     goto ERROR; /* TODO check if identifier is registered as a typedef use symtbl */

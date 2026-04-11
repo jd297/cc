@@ -47,6 +47,11 @@ static int lex_match(char c)
 	return 0;
 }
 
+extern char *lex_tell(void)
+{
+	return lex_current_p;
+}
+
 extern void lex_setpos(char *pos)
 {
 	/* TODO if (pos == yytext) {
