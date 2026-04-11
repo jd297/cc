@@ -95,7 +95,7 @@ int compiler_c_run(Compiler_C *compiler)
 
 	parse_tree_node_destroy(parse_result);
 
-	free(src);
+	yy_delete_buffer(yystate);
 
 	ir_ctx_destroy(ir_ctx);
 
