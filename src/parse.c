@@ -131,6 +131,7 @@ static ParseTreeNode *parse_declaration_specifier(void)
     ParseTreeNode *type_specifier;
     ParseTreeNode *type_qualifier;
 
+	/* TODO should go to a OK state no list */
 NEXT:
     parse_opt(this_node, storage_class_specifier, NEXT);
 
@@ -1756,9 +1757,6 @@ static ParseTreeNode *parse_parameter_declaration(void)
     ParseTreeNode *declarator;
     ParseTreeNode *abstract_declarator;
 
-    /* TODO remove list everywhere where this node type is used all wrong 
-       but not really an issue i guess
-    */
     parse_list_required(this_node, declaration_specifier, ERROR);
     
     parse_opt(this_node, declarator, OK);
