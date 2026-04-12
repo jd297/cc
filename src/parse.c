@@ -1396,12 +1396,8 @@ static ParseTreeNode *parse_type_name(void)
     ParseTreeNode *specifier_qualifier;
     ParseTreeNode *abstract_declarator;
 
-NEXT_SPECIFIER_QUALIFIER:
-    parse_opt(this_node, specifier_qualifier, NEXT_SPECIFIER_QUALIFIER);
 
-    if (this_node->num == 0) {
-        goto ERROR;
-    }
+	parse_list_required(this_node, specifier_qualifier, ERROR);
 
     parse_opt(this_node, abstract_declarator, OK);
 
