@@ -6,14 +6,31 @@
 #include "parse.h"
 #include "lex.h"
 #include "tok.h"
+#include "symtbl.h"
+#include "ir.h"
 
 int parse_error_count;
-
 ParseTreeNode *parse_result;
+
+static Symtbl *parse_scope_global;
+static Symtbl *parse_scope_function;
+static Symtbl *parse_scope_current;
 
 extern int yyparse(void)
 {
-    if ((parse_result = parse_translation_unit()) == NULL) {
+	if ((parse_scope_global = symtbl_create(NULL)) == NULL) {
+		return -1;
+	}
+
+	/*parse_scope_current = parse_scope_global;
+	parse_scope_function = NULL;*/
+	parse_error_count = 0;
+
+	parse_result = parse_translation_unit();
+
+	symtbl_free(parse_scope_global);
+
+    if (parse_result == NULL || parse_error_count > 0) {
     	return -1;
     }
 
@@ -35,6 +52,8 @@ static ParseTreeNode *parse_external_declaration(void)
     ParseTreeNode *this_node = parse_tree_node_create(EXTERNAL_DECLARATION, NULL);
     ParseTreeNode *function_definition;
     ParseTreeNode *declaration;
+
+	parse_scope_current = parse_scope_global;
 
     parse_opt(this_node, function_definition, OK);
 

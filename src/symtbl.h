@@ -9,78 +9,66 @@
 typedef struct Symtbl Symtbl;
 
 typedef enum {
-	SYMTBL_ENTRY_FUNCTION,
-	SYMTBL_ENTRY_LABEL,
-	SYMTBL_ENTRY_LOCAL,
-	SYMTBL_ENTRY_DATA,
-	SYMTBL_ENTRY_UNION,
-	SYMTBL_ENTRY_STRUCT,
-	SYMTBL_ENTRY_TYPEDEF
-} SymtblEntryType;
-
-typedef struct {
-	Symtbl *scope; /* TODO DRAFT */
-} SymtblFunction;
-
-typedef struct {
-	size_t addr;
-} SymtblLocal;
-
-typedef struct {
-	size_t lid;
-} SymtblLabel;
+	SYM_CLASS_OBJECT,
+	SYM_CLASS_FUNCTION,
+	SYM_CLASS_TYPEDEF_NAME,
+	SYM_CLASS_ENUM_CONSTANT,
+	SYM_CLASS_LABEL,
+	SYM_CLASS_TAG_OF_STRUCT,
+	SYM_CLASS_UNION,
+	SYM_CLASS_ENUMERATION,
+	SYM_CLASS_STRUCT_UNION_MEMBER,
+} SymtblEntryClass;
 
 typedef struct {
 	sv_t *id;
 	IRDataType *dtype;
-	SymtblEntryType etype;
+	SymtblEntryClass eclass;
 
 	union {
-		SymtblFunction function;
-		SymtblLocal local;
-		/* SymtblLocal data; */ /* dtype should be enough */
-		SymtblLabel label;
+		Symtbl *scope;
+		size_t addr;
+		size_t label_id;
 	} as;
 
-	/* Lexer_Location_C loc; */ /* TODO DRAFT */
+	/* TODO token location */
 } SymtblEntry;
 
 struct Symtbl {
-	struct Symtbl *parent;
+	Symtbl *parent;
 
-	SymtblEntry *self; /* TODO DRAFT */
-
-	lmap_sv_t entries;
-	lmap_sv_t labels;
-	/* TODO maybe */
-	/* lmap_sv_t locals; */
-	/* lmap_sv_t ...; */
-	
-	int entered;
+	lmap_sv_t namespace1; /* OBJECT, FUNCTION, TYPEDEF_NAME, ENUM_CONSTANT */	
+	lmap_sv_t namespace2; /* LABEL */
+	lmap_sv_t namespace3; /* TAGS_OF_STRUCT, UNION, ENUMERATION */
+	lmap_sv_t namespace4; /* STRUCT_UNION_MEMBER */
 };
 
 extern Symtbl *symtbl_create(Symtbl *parent);
 
 extern void symtbl_free(Symtbl *symtbl);
 
-extern SymtblEntry *symtbl_get_entry(Symtbl *symtbl, sv_t *id, const SymtblEntryType etype);
+extern SymtblEntry *symtbl_get_entry(Symtbl *symtbl, sv_t *id, const SymtblEntryClass eclass);
 
-#define symtbl_get_function_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYMTBL_ENTRY_FUNCTION);
+#define symtbl_get_object_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYM_CLASS_OBJECT);
+#define symtbl_get_function_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYM_CLASS_FUNCTION);
+#define symtbl_get_typedef_name_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYM_CLASS_TYPEDEF_NAME);
+#define symtbl_get_enum_constant_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYM_CLASS_ENUM_CONSTANT);
+#define symtbl_get_label_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYM_CLASS_LABEL);
+#define symtbl_get_tag_of_struct_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYM_CLASS_TAG_OF_STRUCT);
+#define symtbl_get_union_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYM_CLASS_UNION);
+#define symtbl_get_enumeration_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYM_CLASS_ENUMERATION);
+#define symtbl_get_struct_union_member_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYM_CLASS_STRUCT_UNION_MEMBER);
 
-#define symtbl_get_local_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYMTBL_ENTRY_LOCAL);
+extern SymtblEntry *symtbl_add_entry(Symtbl *symtbl, sv_t *id, IRDataType *dtype, const SymtblEntryClass eclass);
 
-#define symtbl_get_data_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYMTBL_ENTRY_DATA);
-
-#define symtbl_get_label_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYMTBL_ENTRY_LABEL);
-
-extern SymtblEntry *symtbl_add_entry(Symtbl *symtbl, sv_t *id, IRDataType *dtype, const SymtblEntryType etype);
-
-#define symtbl_add_function_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYMTBL_ENTRY_FUNCTION);
-
-#define symtbl_add_local_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYMTBL_ENTRY_LOCAL);
-
-#define symtbl_add_data_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYMTBL_ENTRY_DATA);
-
-#define symtbl_add_label_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYMTBL_ENTRY_LABEL);
+#define symtbl_add_object_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_OBJECT);
+#define symtbl_add_function_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_FUNCTION);
+#define symtbl_add_typedef_name_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_TYPEDEF_NAME);
+#define symtbl_add_enum_constant_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_ENUM_CONSTANT);
+#define symtbl_add_label_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_LABEL);
+#define symtbl_add_tag_of_struct_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_TAG_OF_STRUCT);
+#define symtbl_add_union_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_UNION);
+#define symtbl_add_enumeration_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_ENUMERATION);
+#define symtbl_add_struct_union_member_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_STRUCT_UNION_MEMBER);
 
 #endif

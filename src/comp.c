@@ -55,6 +55,8 @@ int compiler_c_run(Compiler_C *compiler)
 
 	fclose(compiler->input);
 
+	codegen_func = codegen_x86_64_run; /* TODO HARD */
+
 	YY_BUFFER_STATE yystate = yy_scan_buffer(src, bytes);
 
 	yyparse_result = yyparse();
@@ -64,7 +66,6 @@ int compiler_c_run(Compiler_C *compiler)
 		return -1;
 	}
 
-	codegen_func = codegen_x86_64_run; /* TODO HARD */
 
 	/*
 	Symtbl *symtbl_root = symtbl_create(NULL);

@@ -895,16 +895,17 @@ static void irgen_c_primary_expression(IR_CTX *ctx, ParseTreeNode *this_node)
 				// TODO probably incomplete but fine for now...
 				// TODO need globals etc.
 				SymtblEntry *entry = node->sym;
-				
+				/* TODO determinie by storage_flags (extern, static, auto <=> register ) */
 				if(entry == NULL) {
 					ctx->ssa_latest = ir_ssa_from_view(ctx, &node->tok.literal.sv);
 					
 					return;
 				}
 
-				assert(entry->etype == SYMTBL_ENTRY_LOCAL);
+				
+				assert(entry->eclass == SYM_CLASS_OBJECT);
 
-				ctx->ssa_latest = ir_ssa_from_stack(ctx, &entry->as.local.addr);
+				ctx->ssa_latest = ir_ssa_from_stack(ctx, &entry->as.addr);
 			} break;
 			case CONSTANT:
 				irgen_c_constant(ctx, node);
@@ -1084,7 +1085,7 @@ static void irgen_c_init_declarator_list(IR_CTX *ctx, ParseTreeNode *this_node)
 
 static void irgen_c_init_declarator(IR_CTX *ctx, ParseTreeNode *this_node)
 {
-	IRSSAEnt *ssa_local = ir_ssa_from_stack(ctx, &this_node->sym->as.local.addr);
+	IRSSAEnt *ssa_local = ir_ssa_from_stack(ctx, &this_node->sym->as.addr);
 
     ir_emit(ctx, IR_OC_LOCAL, this_node->sym->dtype, ssa_local, NULL, NULL);
     
@@ -1163,9 +1164,9 @@ static void irgen_c_labeled_statement(IR_CTX *ctx, ParseTreeNode *this_node)
 
 			assert(label_entry != NULL);
 
-			label_entry->as.label.lid = ctx->label_tmp++;
+			label_entry->as.label_id = ctx->label_tmp++;
 
-			ir_emit(ctx, IR_OC_LABEL, NULL, ir_ssa_from_num(ctx, label_entry->as.label.lid), NULL, NULL);
+			ir_emit(ctx, IR_OC_LABEL, NULL, ir_ssa_from_num(ctx, label_entry->as.label_id), NULL, NULL);
 
 			irgen_c_statement(ctx, statement);
 		} break;
@@ -1434,7 +1435,7 @@ static void irgen_c_jump_statement(IR_CTX *ctx, ParseTreeNode *this_node)
 
 			assert(label_entry != NULL);
 
-			ir_emit(ctx, IR_OC_JMP, NULL, ir_ssa_from_addr(ctx, &label_entry->as.label.lid), NULL, NULL);
+			ir_emit(ctx, IR_OC_JMP, NULL, ir_ssa_from_addr(ctx, &label_entry->as.label_id), NULL, NULL);
 		} break;
 		case T_CONTINUE: {
 			ir_emit(ctx, IR_OC_JMP, NULL, ir_ssa_from_num(ctx, ctx->label_iter_begin), NULL, NULL);
