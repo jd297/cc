@@ -131,25 +131,19 @@ static ParseTreeNode *parse_declaration_specifier(void)
     ParseTreeNode *type_specifier;
     ParseTreeNode *type_qualifier;
 
-	/* TODO should go to a OK state no list */
-NEXT:
-    parse_opt(this_node, storage_class_specifier, NEXT);
+    parse_opt(this_node, storage_class_specifier, OK);
 
-    parse_opt(this_node, type_specifier, NEXT);
+    parse_opt(this_node, type_specifier, OK);
 
-    parse_opt(this_node, type_qualifier, NEXT);
+    parse_opt(this_node, type_qualifier, OK);
 
-
-    if (this_node->num == 0) {
-        goto ERROR;
-    }
-
-    return this_node;
-
-ERROR:
+/* ERROR: */
 	parse_tree_node_destroy(this_node);
 
 	return NULL;
+
+OK:
+    return this_node;
 }
 
 static ParseTreeNode *parse_declarator(void)
