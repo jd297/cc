@@ -617,14 +617,14 @@ NEXT_AFTER_DIRECT_DECLARATOR_PARENT:
 
             break;
         }
-        case '{': {
+        case '[': {
         	this_node->tok = lex_tok;
 
             parse_opt(this_node, constant_expression, NEXT_AFTER_DIRECT_DECLARATOR_BRACKET);
 
 NEXT_AFTER_DIRECT_DECLARATOR_BRACKET:
 
-            if (yylex() != '}') {
+            if (yylex() != ']') {
                 goto ERROR;
             }
             
