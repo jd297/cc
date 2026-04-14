@@ -827,6 +827,7 @@ static void irgen_c_postfix_expression(IR_CTX *ctx, ParseTreeNode *this_node)
 {
         switch (this_node->tok.type) {
 			case T_UNKNOWN:
+			case T_EOF:
 				irgen_c_primary_expression(ctx, this_node->elements[0]);
 				break;
 			case T_OPEN_BRACKET:
@@ -905,7 +906,7 @@ static void irgen_c_primary_expression(IR_CTX *ctx, ParseTreeNode *this_node)
 				
 				assert(entry->eclass == SYM_CLASS_OBJECT);
 
-				ctx->ssa_latest = ir_ssa_from_stack(ctx, &entry->as.addr);
+				ctx->ssa_latest = ir_ssa_from_stack(ctx, &entry->as.object.addr);
 			} break;
 			case CONSTANT:
 				irgen_c_constant(ctx, node);
@@ -1085,7 +1086,7 @@ static void irgen_c_init_declarator_list(IR_CTX *ctx, ParseTreeNode *this_node)
 
 static void irgen_c_init_declarator(IR_CTX *ctx, ParseTreeNode *this_node)
 {
-	IRSSAEnt *ssa_local = ir_ssa_from_stack(ctx, &this_node->sym->as.addr);
+	IRSSAEnt *ssa_local = ir_ssa_from_stack(ctx, &this_node->sym->as.object.addr);
 
     ir_emit(ctx, IR_OC_LOCAL, this_node->sym->dtype, ssa_local, NULL, NULL);
     
@@ -1164,9 +1165,9 @@ static void irgen_c_labeled_statement(IR_CTX *ctx, ParseTreeNode *this_node)
 
 			assert(label_entry != NULL);
 
-			label_entry->as.label_id = ctx->label_tmp++;
+			label_entry->as.label.id = ctx->label_tmp++;
 
-			ir_emit(ctx, IR_OC_LABEL, NULL, ir_ssa_from_num(ctx, label_entry->as.label_id), NULL, NULL);
+			ir_emit(ctx, IR_OC_LABEL, NULL, ir_ssa_from_num(ctx, label_entry->as.label.id), NULL, NULL);
 
 			irgen_c_statement(ctx, statement);
 		} break;
@@ -1435,7 +1436,7 @@ static void irgen_c_jump_statement(IR_CTX *ctx, ParseTreeNode *this_node)
 
 			assert(label_entry != NULL);
 
-			ir_emit(ctx, IR_OC_JMP, NULL, ir_ssa_from_addr(ctx, &label_entry->as.label_id), NULL, NULL);
+			ir_emit(ctx, IR_OC_JMP, NULL, ir_ssa_from_addr(ctx, &label_entry->as.label.id), NULL, NULL);
 		} break;
 		case T_CONTINUE: {
 			ir_emit(ctx, IR_OC_JMP, NULL, ir_ssa_from_num(ctx, ctx->label_iter_begin), NULL, NULL);

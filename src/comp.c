@@ -11,6 +11,7 @@
 #include "irgen.h"
 #include "opt.h"
 #include "gen.h"
+#include "debug/dot.h"
 
 #include <jd297/lex.h>
 #include <jd297/lmap_sv.h>
@@ -66,6 +67,9 @@ int compiler_c_run(Compiler_C *compiler)
 		return -1;
 	}
 
+	/*dot_run(parse_result);
+
+	return 0;*/
 
 	/*
 	Symtbl *symtbl_root = symtbl_create(NULL);
