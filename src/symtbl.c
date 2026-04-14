@@ -69,7 +69,7 @@ extern SymtblEntry *symtbl_get_entry(Symtbl *symtbl, sv_t *id, const SymtblEntry
 	}
 }
 
-extern SymtblEntry *symtbl_add_entry(Symtbl *symtbl, sv_t *id, IRDataType *dtype, const SymtblEntryClass eclass)
+extern SymtblEntry *symtbl_add_entry(Symtbl *symtbl, sv_t id, IRDataType *dtype, const SymtblEntryClass eclass)
 {
 	SymtblEntry *entry = (SymtblEntry *)malloc(sizeof(SymtblEntry));
 
@@ -85,21 +85,21 @@ extern SymtblEntry *symtbl_add_entry(Symtbl *symtbl, sv_t *id, IRDataType *dtype
 		case SYM_CLASS_FUNCTION:
 		case SYM_CLASS_TYPEDEF_NAME:
 		case SYM_CLASS_ENUM_CONSTANT: {
-			assert(lmap_sv_add(&symtbl->namespace1, id, entry) == 0);
+			assert(lmap_sv_add(&symtbl->namespace1, &entry->id, entry) == 0);
 		} break;
 		/* NAMESPACE 2 */
 		case SYM_CLASS_LABEL: {
-			assert(lmap_sv_add(&symtbl->namespace2, id, entry) == 0);
+			assert(lmap_sv_add(&symtbl->namespace2, &entry->id, entry) == 0);
 		} break;
 		/* NAMESPACE 3 */
 		case SYM_CLASS_TAG_OF_STRUCT:
 		case SYM_CLASS_UNION:
 		case SYM_CLASS_ENUMERATION: {
-			assert(lmap_sv_add(&symtbl->namespace3, id, entry) == 0);
+			assert(lmap_sv_add(&symtbl->namespace3, &entry->id, entry) == 0);
 		} break;
 		/* NAMESPACE 4 */
 		case SYM_CLASS_STRUCT_UNION_MEMBER: {
-			assert(lmap_sv_add(&symtbl->namespace4, id, entry) == 0);
+			assert(lmap_sv_add(&symtbl->namespace4, &entry->id, entry) == 0);
 		} break;
 		default:
 			assert(0 && "NOT REACHABLE");

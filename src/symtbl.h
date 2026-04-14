@@ -9,6 +9,7 @@
 typedef struct Symtbl Symtbl;
 
 typedef enum {
+	SYM_CLASS_UNKNOWN = 0,
 	SYM_CLASS_OBJECT,
 	SYM_CLASS_FUNCTION,
 	SYM_CLASS_TYPEDEF_NAME,
@@ -21,17 +22,36 @@ typedef enum {
 } SymtblEntryClass;
 
 typedef struct {
-	sv_t *id;
+	sv_t id;
 	IRDataType *dtype;
 	SymtblEntryClass eclass;
+	Symtbl *scope_self;
 
 	union {
-		Symtbl *scope;
-		size_t addr;
-		size_t label_id;
+		enum {
+			SYM_STATE_DECLARATION,
+			SYM_STATE_DEFINITION
+		} state;
+		union {
+			Symtbl *scope;
+			size_t argc;
+		} function;
+		union {
+			Symtbl *scope;
+		} union_struct;
+		union {
+			int val;
+		} enum_constant;
+		union {
+			size_t addr;
+		} object;
+		union {
+			size_t id;
+		} label;
 	} as;
 
-	/* TODO token location */
+	/* TODO PROPOSAL */
+	/* TODO TokLoc loc */
 } SymtblEntry;
 
 struct Symtbl {
@@ -59,16 +79,16 @@ extern SymtblEntry *symtbl_get_entry(Symtbl *symtbl, sv_t *id, const SymtblEntry
 #define symtbl_get_enumeration_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYM_CLASS_ENUMERATION);
 #define symtbl_get_struct_union_member_entry(symtbl, id) symtbl_get_entry((symtbl), (id), SYM_CLASS_STRUCT_UNION_MEMBER);
 
-extern SymtblEntry *symtbl_add_entry(Symtbl *symtbl, sv_t *id, IRDataType *dtype, const SymtblEntryClass eclass);
+extern SymtblEntry *symtbl_add_entry(Symtbl *symtbl, sv_t id, IRDataType *dtype, const SymtblEntryClass eclass);
 
-#define symtbl_add_object_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_OBJECT);
-#define symtbl_add_function_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_FUNCTION);
-#define symtbl_add_typedef_name_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_TYPEDEF_NAME);
-#define symtbl_add_enum_constant_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_ENUM_CONSTANT);
-#define symtbl_add_label_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_LABEL);
-#define symtbl_add_tag_of_struct_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_TAG_OF_STRUCT);
-#define symtbl_add_union_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_UNION);
-#define symtbl_add_enumeration_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_ENUMERATION);
-#define symtbl_add_struct_union_member_entry(symtbl, id) symtbl_add_entry((symtbl), (id), SYM_CLASS_STRUCT_UNION_MEMBER);
+#define symtbl_add_object_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_OBJECT);
+#define symtbl_add_function_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_FUNCTION);
+#define symtbl_add_typedef_name_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_TYPEDEF_NAME);
+#define symtbl_add_enum_constant_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_ENUM_CONSTANT);
+#define symtbl_add_label_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_LABEL);
+#define symtbl_add_tag_of_struct_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_TAG_OF_STRUCT);
+#define symtbl_add_union_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_UNION);
+#define symtbl_add_enumeration_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype),SYM_CLASS_ENUMERATION);
+#define symtbl_add_struct_union_member_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_STRUCT_UNION_MEMBER);
 
 #endif
