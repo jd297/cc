@@ -8,6 +8,17 @@
 
 #include "ir.h"
 
+IRDataType *ir_dtype_assign(IRDataType *src)
+{
+	IRDataType *dtype = malloc(sizeof(IRDataType));
+
+	assert(dtype != NULL);
+
+	*dtype = *src;
+
+	return dtype;
+}
+
 IRDataType *ir_dtype_from_primitive(IRPrimitiveDataType primitive, int qualifier_flags, int storage_flags)
 {
 	IRDataType *dtype = malloc(sizeof(IRDataType));
@@ -20,6 +31,12 @@ IRDataType *ir_dtype_from_primitive(IRPrimitiveDataType primitive, int qualifier
 	dtype->as.primitive = primitive;
 
 	return dtype;
+}
+
+void ir_dtype_wrap_pointer(IRDataType *ptr, IRDataType *to)
+{
+	ptr->storage_flags = to->storage_flags;
+	ptr->as.pointer.to = to;
 }
 
 IRLiteral ir_literal_from_d(int d)

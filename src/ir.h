@@ -104,7 +104,11 @@ struct IRDataType {
 	} as;
 };
 
+IRDataType *ir_dtype_assign(IRDataType *src);
+
 IRDataType *ir_dtype_from_primitive(IRPrimitiveDataType primitive, int qualifier_flags, int storage_flags);
+
+void ir_dtype_wrap_pointer(IRDataType *ptr, IRDataType *to);
 
 typedef union {
 	int d;

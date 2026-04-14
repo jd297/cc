@@ -127,11 +127,14 @@ typedef struct {
 
     int qualifier_flags;
 	int storage_flags;
+	int is_ptr;
+	int is_from_typedef;
 } ParseDeclarationSpecifier;
 
 typedef struct {
 	ParseDeclarationSpecifier decl_spec;
-	IRDataType *dtype;	
+	IRDataType dtype;
+	SymtblEntryClass eclass;
 } ParseDeclarationState;
 
 extern int parse_error_count;
@@ -177,70 +180,236 @@ extern void parse_tree_node_destroy(ParseTreeNode *node);
 
 static ParseDeclarationState decl_state;
 
-static void parse_decl_state_reset(void)
+static void parse_decl_state_build_dtype(void)
 {
+	switch (decl_state.decl_spec.data_structure_type) {
+    	case STRUCT:
+    		assert(0 && "TODO not implemented: with (STRUCT)");
+    	case UNION:
+    		assert(0 && "TODO not implemented: with (UNION)");
+    	case ENUM:
+    		assert(0 && "TODO not implemented: with (ENUM)");
+    	case PRIMITIVE: {
+    		if (decl_state.decl_spec.basic_data_type == VOID) {
+    			decl_state.dtype.type = IR_TYPE_NONE;
+
+    			break;
+    		}
+
+    		decl_state.dtype.type = IR_TYPE_PRIMITIVE;
+    		
+    		switch (decl_state.decl_spec.basic_data_type) {
+    			case CHAR: {
+    				switch (decl_state.decl_spec.value_sign) {
+    					case VALUE_SIGN_NOT_SET: {
+    						decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_CHAR);
+    					} break;
+    					case SIGNED: {
+    						decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED_CHAR);
+    					} break;
+    					case UNSIGNED: {
+    						decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED_CHAR);
+    					} break;
+    					default:
+							assert(0 && "NOT REACHABLE");
+    				}
+    			} break;
+    			case INT: {
+    				switch (decl_state.decl_spec.value_sign) {
+    					case VALUE_SIGN_NOT_SET: {
+    						switch (decl_state.decl_spec.length_type) {
+    							case LENGTH_TYPE_NOT_SET: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_INT);
+    							} break;
+								case SHORT: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SHORT_INT);
+    							} break;
+								case LONG: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_LONG_INT);
+    							} break;
+    							default:
+									assert(0 && "NOT REACHABLE");
+    						}
+    					} break;
+						case SIGNED: {
+    						switch (decl_state.decl_spec.length_type) {
+    							case LENGTH_TYPE_NOT_SET: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED_INT);
+    							} break;
+								case SHORT: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED_SHORT_INT);
+    							} break;
+								case LONG: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED_LONG_INT);
+    							} break;
+    							default:
+									assert(0 && "NOT REACHABLE");
+    						}
+    					} break;
+						case UNSIGNED: {
+    						switch (decl_state.decl_spec.length_type) {
+    							case LENGTH_TYPE_NOT_SET: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED_INT);
+    							} break;
+								case SHORT: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED_SHORT_INT);
+    							} break;
+								case LONG: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED_LONG_INT);
+    							} break;
+    							default:
+									assert(0 && "NOT REACHABLE");
+    						}
+    					} break;
+    					default:
+							assert(0 && "NOT REACHABLE");
+    				}
+    			} break;
+    			case BASIC_DATA_TYPE_NOT_SET: {
+    				switch (decl_state.decl_spec.value_sign) {
+    					case VALUE_SIGN_NOT_SET: {
+    						switch (decl_state.decl_spec.length_type) {
+    							case LENGTH_TYPE_NOT_SET: {
+    								assert(0 && "NOT REACHABLE");
+    							} break;
+								case SHORT: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SHORT);
+    							} break;
+								case LONG: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_LONG);
+    							} break;
+    							default:
+									assert(0 && "NOT REACHABLE");
+    						}
+    					} break;
+						case SIGNED: {
+    						switch (decl_state.decl_spec.length_type) {
+    							case LENGTH_TYPE_NOT_SET: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED);
+    							} break;
+								case SHORT: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED_SHORT);
+    							} break;
+								case LONG: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED_LONG);
+    							} break;
+    							default:
+									assert(0 && "NOT REACHABLE");
+    						}
+    					} break;
+						case UNSIGNED: {
+    						switch (decl_state.decl_spec.length_type) {
+    							case LENGTH_TYPE_NOT_SET: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED);
+    							} break;
+								case SHORT: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED_SHORT);
+    							} break;
+								case LONG: {
+    								decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED_LONG);
+    							} break;
+    							default:
+									assert(0 && "NOT REACHABLE");
+    						}
+    					} break;
+    					default:
+							assert(0 && "NOT REACHABLE");
+    				}
+    			} break;
+    			case DOUBLE: {
+    				if (decl_state.decl_spec.length_type == LONG) {
+    					decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_LONG_DOUBLE);
+    					break;
+    				}
+    				
+    				decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_DOUBLE);
+    			} break;
+    			case FLOAT: {
+    				decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_FLOAT);
+				} break;
+    			case VOID:
+    			default:
+    				assert(0 && "NOT REACHABLE");
+    		}
+		} break;
+    	case DATA_STRUCTURE_TYPE_NOT_SET: {
+		    if (decl_state.decl_spec.is_ptr == 1) {
+		    	decl_state.dtype.type = IR_TYPE_POINTER;
+
+		    	break;
+		    }
+
+			decl_state.dtype.type = IR_TYPE_PRIMITIVE;
+    		decl_state.dtype.as.primitive = codegen_get_primitive_data_type(IR_GENERIC_INT);
+    	} break;
+    	default:
+    		assert(0 && "NOT REACHABLE");
+    }
+
+	decl_state.dtype.qualifier_flags = decl_state.decl_spec.qualifier_flags;
+	decl_state.dtype.storage_flags = decl_state.decl_spec.storage_flags;
+}
+
+static void parse_decl_state_reset(SymtblEntryClass eclass)
+{
+	switch (eclass) {
+		case SYM_CLASS_OBJECT:
+		case SYM_CLASS_FUNCTION:
+		case SYM_CLASS_TYPEDEF_NAME:
+		case SYM_CLASS_TAG_OF_STRUCT:
+		case SYM_CLASS_UNION:
+		case SYM_CLASS_ENUMERATION:
+		case SYM_CLASS_STRUCT_UNION_MEMBER:
+		case SYM_CLASS_UNKNOWN:
+			break;
+		case SYM_CLASS_ENUM_CONSTANT:
+		case SYM_CLASS_LABEL:
+		default:
+			assert(0 && "NOT REACHABLE");
+	}
+
 	(void)memset(&decl_state, 0, sizeof(ParseDeclarationState));
+
+	decl_state.eclass = eclass;
 }
 
 static void parse_decl_state_add_decl_spec(TokType type)
 {
 	switch (type) {
+		case '*': {
+			decl_state.decl_spec.is_ptr = 1;
+		} break;
 		/* STORAGE_CLASS_SPECIFIER */
+		/* TODO validate that only one of them exist */
 		case T_AUTO: {
-			if (decl_state.decl_spec.storage_flags & IR_STORAGE_FLAG_AUTO) {
-				assert(0 && "TODO warning message");
-			}
-			
 			decl_state.decl_spec.storage_flags |= IR_STORAGE_FLAG_AUTO;
 		} break;
 		case T_REGISTER: {
-			if (decl_state.decl_spec.storage_flags & IR_STORAGE_FLAG_REGISTER) {
-				assert(0 && "TODO warning message");
-			}
-			
 			decl_state.decl_spec.storage_flags |= IR_STORAGE_FLAG_REGISTER;
 		} break;
 		case T_STATIC: {
-			if (decl_state.decl_spec.storage_flags & IR_STORAGE_FLAG_STATIC) {
-				assert(0 && "TODO warning message");
-			}
-			
 			decl_state.decl_spec.storage_flags |= IR_STORAGE_FLAG_STATIC;
 		} break;
 		case T_EXTERN: {
-			if (decl_state.decl_spec.storage_flags & IR_STORAGE_FLAG_EXTERN) {
-				assert(0 && "TODO warning message");
-			}
-			
 			decl_state.decl_spec.storage_flags |= IR_STORAGE_FLAG_EXTERN;
 		} break;
 		case T_TYPEDEF: {
-			assert(0 && "TODO not implemented: with (T_TYPEDEF)");
-			
-			if (decl_state.decl_spec.storage_flags & IR_STORAGE_FLAG_TYPEDEF) {
-				assert(0 && "TODO warning message");
-			}
-			
 			decl_state.decl_spec.storage_flags |= IR_STORAGE_FLAG_TYPEDEF;
+			
+			decl_state.eclass = SYM_CLASS_TYPEDEF_NAME;
 		} break;
 		/* TYPE_QUALIFIER */
 		case T_CONST: {
-			if (decl_state.decl_spec.qualifier_flags & IR_QUALIFIER_FLAG_CONST) {
-				assert(0 && "TODO warning message");
-			}
-			
 			decl_state.decl_spec.qualifier_flags |= IR_QUALIFIER_FLAG_CONST;
 		} break;
 		case T_VOLATILE: {
-			if (decl_state.decl_spec.qualifier_flags & IR_QUALIFIER_FLAG_VOLATILE) {
-				assert(0 && "TODO warning message");
-			}
-			
 			decl_state.decl_spec.qualifier_flags |= IR_QUALIFIER_FLAG_VOLATILE;
 		} break;
 		/* TYPE_SPECIFIER */
-		// TODO struct-or-union, enum, typedef
+		// TODO struct-or-union, enum
 		case T_VOID: {
+			assert(decl_state.decl_spec.is_from_typedef == 0);
+
 			if (decl_state.decl_spec.length_type != LENGTH_TYPE_NOT_SET) {
 				assert(0 && "TODO error message");
 			}
@@ -261,6 +430,8 @@ static void parse_decl_state_add_decl_spec(TokType type)
 			decl_state.decl_spec.data_structure_type = PRIMITIVE;
 		} break;
 		case T_CHAR: {
+			assert(decl_state.decl_spec.is_from_typedef == 0);
+
 			if (decl_state.decl_spec.length_type != LENGTH_TYPE_NOT_SET) {
 				assert(0 && "TODO error message");
 			}
@@ -277,6 +448,8 @@ static void parse_decl_state_add_decl_spec(TokType type)
 			decl_state.decl_spec.data_structure_type = PRIMITIVE;
 		} break;
 		case T_SHORT: {
+			assert(decl_state.decl_spec.is_from_typedef == 0);
+
 			if (decl_state.decl_spec.length_type != LENGTH_TYPE_NOT_SET) {
 				assert(0 && "TODO error message");
 			}
@@ -293,6 +466,8 @@ static void parse_decl_state_add_decl_spec(TokType type)
 			decl_state.decl_spec.data_structure_type = PRIMITIVE;
 		} break;
 		case T_INT: {
+			assert(decl_state.decl_spec.is_from_typedef == 0);
+
 			if (decl_state.decl_spec.data_structure_type != DATA_STRUCTURE_TYPE_NOT_SET && decl_state.decl_spec.data_structure_type != PRIMITIVE) {
 				assert(0 && "TODO error message");
 			}
@@ -305,6 +480,8 @@ static void parse_decl_state_add_decl_spec(TokType type)
 			decl_state.decl_spec.data_structure_type = PRIMITIVE;
 		} break;
 		case T_LONG: {
+			assert(decl_state.decl_spec.is_from_typedef == 0);
+
 			if (decl_state.decl_spec.length_type != LENGTH_TYPE_NOT_SET) {
 				assert(0 && "TODO error message");
 			}
@@ -321,6 +498,8 @@ static void parse_decl_state_add_decl_spec(TokType type)
 			decl_state.decl_spec.data_structure_type = PRIMITIVE;
 		} break;
 		case T_FLOAT: {
+			assert(decl_state.decl_spec.is_from_typedef == 0);
+
 			if (decl_state.decl_spec.length_type != LENGTH_TYPE_NOT_SET) {
 				assert(0 && "TODO error message");
 			}
@@ -341,6 +520,8 @@ static void parse_decl_state_add_decl_spec(TokType type)
 			decl_state.decl_spec.data_structure_type = PRIMITIVE;
 		} break;
 		case T_DOUBLE: {
+			assert(decl_state.decl_spec.is_from_typedef == 0);
+
 			if (decl_state.decl_spec.length_type == SHORT) {
 				assert(0 && "TODO error message");
 			}
@@ -361,6 +542,8 @@ static void parse_decl_state_add_decl_spec(TokType type)
 			decl_state.decl_spec.data_structure_type = PRIMITIVE;
 		} break;
 		case T_SIGNED: {
+			assert(decl_state.decl_spec.is_from_typedef == 0);
+
 			if (decl_state.decl_spec.value_sign != VALUE_SIGN_NOT_SET) {
 				assert(0 && "TODO error message");
 			}
@@ -377,6 +560,8 @@ static void parse_decl_state_add_decl_spec(TokType type)
 			decl_state.decl_spec.data_structure_type = PRIMITIVE;
 		} break;
 		case T_UNSIGNED: {
+			assert(decl_state.decl_spec.is_from_typedef == 0);
+
 			if (decl_state.decl_spec.value_sign != VALUE_SIGN_NOT_SET) {
 				assert(0 && "TODO error message");
 			}
@@ -395,174 +580,10 @@ static void parse_decl_state_add_decl_spec(TokType type)
 		default:
 			assert(0 && "NOT REACHABLE");
 	}
-}
 
-static void parse_decl_state_build_dtype(void)
-{
-	decl_state.dtype = malloc(sizeof(IRDataType));
-
-    assert(decl_state.dtype != NULL);
-
-	switch (decl_state.decl_spec.data_structure_type) {
-    	case STRUCT:
-    		assert(0 && "TODO not implemented: with (STRUCT)");
-    	case UNION:
-    		assert(0 && "TODO not implemented: with (UNION)");
-    	case ENUM:
-    		assert(0 && "TODO not implemented: with (ENUM)");
-    	case PRIMITIVE: {
-    		if (decl_state.decl_spec.basic_data_type == VOID) {
-    			decl_state.dtype->type = IR_TYPE_NONE;
-
-    			break;
-    		}
-
-    		decl_state.dtype->type = IR_TYPE_PRIMITIVE;
-    		
-    		switch (decl_state.decl_spec.basic_data_type) {
-    			case CHAR: {
-    				switch (decl_state.decl_spec.value_sign) {
-    					case VALUE_SIGN_NOT_SET: {
-    						decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_CHAR);
-    					} break;
-    					case SIGNED: {
-    						decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED_CHAR);
-    					} break;
-    					case UNSIGNED: {
-    						decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED_CHAR);
-    					} break;
-    					default:
-							assert(0 && "NOT REACHABLE");
-    				}
-    			} break;
-    			case INT: {
-    				switch (decl_state.decl_spec.value_sign) {
-    					case VALUE_SIGN_NOT_SET: {
-    						switch (decl_state.decl_spec.length_type) {
-    							case LENGTH_TYPE_NOT_SET: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_INT);
-    							} break;
-								case SHORT: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SHORT_INT);
-    							} break;
-								case LONG: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_LONG_INT);
-    							} break;
-    							default:
-									assert(0 && "NOT REACHABLE");
-    						}
-    					} break;
-						case SIGNED: {
-    						switch (decl_state.decl_spec.length_type) {
-    							case LENGTH_TYPE_NOT_SET: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED_INT);
-    							} break;
-								case SHORT: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED_SHORT_INT);
-    							} break;
-								case LONG: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED_LONG_INT);
-    							} break;
-    							default:
-									assert(0 && "NOT REACHABLE");
-    						}
-    					} break;
-						case UNSIGNED: {
-    						switch (decl_state.decl_spec.length_type) {
-    							case LENGTH_TYPE_NOT_SET: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED_INT);
-    							} break;
-								case SHORT: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED_SHORT_INT);
-    							} break;
-								case LONG: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED_LONG_INT);
-    							} break;
-    							default:
-									assert(0 && "NOT REACHABLE");
-    						}
-    					} break;
-    					default:
-							assert(0 && "NOT REACHABLE");
-    				}
-    			} break;
-    			case BASIC_DATA_TYPE_NOT_SET: {
-    				switch (decl_state.decl_spec.value_sign) {
-    					case VALUE_SIGN_NOT_SET: {
-    						switch (decl_state.decl_spec.length_type) {
-    							case LENGTH_TYPE_NOT_SET: {
-    								assert(0 && "NOT REACHABLE");
-    							} break;
-								case SHORT: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SHORT);
-    							} break;
-								case LONG: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_LONG);
-    							} break;
-    							default:
-									assert(0 && "NOT REACHABLE");
-    						}
-    					} break;
-						case SIGNED: {
-    						switch (decl_state.decl_spec.length_type) {
-    							case LENGTH_TYPE_NOT_SET: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED);
-    							} break;
-								case SHORT: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED_SHORT);
-    							} break;
-								case LONG: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_SIGNED_LONG);
-    							} break;
-    							default:
-									assert(0 && "NOT REACHABLE");
-    						}
-    					} break;
-						case UNSIGNED: {
-    						switch (decl_state.decl_spec.length_type) {
-    							case LENGTH_TYPE_NOT_SET: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED);
-    							} break;
-								case SHORT: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED_SHORT);
-    							} break;
-								case LONG: {
-    								decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_UNSIGNED_LONG);
-    							} break;
-    							default:
-									assert(0 && "NOT REACHABLE");
-    						}
-    					} break;
-    					default:
-							assert(0 && "NOT REACHABLE");
-    				}
-    			} break;
-    			case DOUBLE: {
-    				if (decl_state.decl_spec.length_type == LONG) {
-    					decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_LONG_DOUBLE);
-    					break;
-    				}
-    				
-    				decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_DOUBLE);
-    			} break;
-    			case FLOAT: {
-    				decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_FLOAT);
-				} break;
-    			case VOID:
-    			default:
-    				assert(0 && "NOT REACHABLE");
-    		}
-		} break;
-    	case DATA_STRUCTURE_TYPE_NOT_SET: {
-    		decl_state.dtype->type = IR_TYPE_PRIMITIVE;
-    		decl_state.dtype->as.primitive = codegen_get_primitive_data_type(IR_GENERIC_INT);
-    	} break;
-    	default:
-    		assert(0 && "NOT REACHABLE");
-    }
-
-	decl_state.dtype->qualifier_flags = decl_state.decl_spec.qualifier_flags;
-	decl_state.dtype->storage_flags = decl_state.decl_spec.storage_flags;
+	if (decl_state.decl_spec.is_from_typedef != 1) {
+		parse_decl_state_build_dtype();
+	}
 }
 
 static ParseTreeNode *parse_tree_node_create(ParseTreeType type, Tok *tok);

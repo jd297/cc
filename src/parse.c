@@ -15,6 +15,7 @@ ParseTreeNode *parse_result;
 static Symtbl *parse_scope_global;
 static Symtbl *parse_scope_function;
 static Symtbl *parse_scope_current;
+static SymtblEntry *parse_function_entry;
 
 extern int yyparse(void)
 {
@@ -22,8 +23,6 @@ extern int yyparse(void)
 		return -1;
 	}
 
-	/*parse_scope_current = parse_scope_global;
-	parse_scope_function = NULL;*/
 	parse_error_count = 0;
 
 	parse_result = parse_translation_unit();
@@ -54,6 +53,7 @@ static ParseTreeNode *parse_external_declaration(void)
     ParseTreeNode *declaration;
 
 	parse_scope_current = parse_scope_global;
+	parse_function_entry = NULL;
 
     parse_opt(this_node, function_definition, OK);
 
@@ -75,6 +75,8 @@ static ParseTreeNode *parse_function_definition(void)
     ParseTreeNode *declaration;
     ParseTreeNode *compound_statement;
     char *lex_pos_saved;
+
+	parse_decl_state_reset(SYM_CLASS_FUNCTION);
 
     lex_pos_saved = lex_tell();
 
@@ -102,6 +104,8 @@ static ParseTreeNode *parse_declaration(void)
     ParseTreeNode *declaration_specifier;
     ParseTreeNode *init_declarator_list;
     char *lex_pos_saved;
+
+	parse_decl_state_reset(SYM_CLASS_OBJECT);
 
     lex_pos_saved = lex_tell();
 
@@ -171,6 +175,9 @@ static ParseTreeNode *parse_compound_statement(void)
     ParseTreeNode *declaration;
     ParseTreeNode *statement;
     char *lex_pos_saved;
+    Symtbl *scope_saved;
+
+	scope_saved = parse_scope_current;
 
     lex_pos_saved = lex_tell();
 
@@ -178,9 +185,22 @@ static ParseTreeNode *parse_compound_statement(void)
         goto ERROR;
     }
 
+	if (parse_scope_current != parse_function_entry->as.function.scope) {
+		parse_scope_current = symtbl_create(parse_scope_current);
+
+		assert(parse_scope_current != NULL);
+	}
+
     parse_list_opt(this_node, declaration);
 
     parse_list_opt(this_node, statement);
+
+	/* restore scope on success or failure (error recovery purpose) */
+	if (parse_scope_current != parse_function_entry->as.function.scope) {
+		symtbl_free(parse_scope_current);
+	}
+
+	parse_scope_current = scope_saved;
 
     if (yylex() != '}') {
         goto ERROR;
@@ -204,6 +224,8 @@ static ParseTreeNode *parse_storage_class_specifier(void)
         case T_STATIC:
         case T_EXTERN:
         case T_TYPEDEF: {
+			parse_decl_state_add_decl_spec(lex_tok.type);
+
             return parse_tree_node_create(STORAGE_CLASS_SPECIFIER, &lex_tok);
         }
         default: {
@@ -234,6 +256,8 @@ static ParseTreeNode *parse_type_specifier(void)
         case T_DOUBLE:
         case T_SIGNED:
         case T_UNSIGNED: {
+			parse_decl_state_add_decl_spec(lex_tok.type);
+
             return parse_tree_node_create(TYPE_SPECIFIER, &lex_tok);
         }
         default: {
@@ -264,6 +288,8 @@ static ParseTreeNode *parse_type_qualifier(void)
     switch (yylex()) {
         case T_CONST:
         case T_VOLATILE: {
+			parse_decl_state_add_decl_spec(lex_tok.type);
+
             return parse_tree_node_create(TYPE_QUALIFIER, &lex_tok);
         } break;
         default: {
@@ -335,6 +361,8 @@ static ParseTreeNode *parse_enum_specifier(void)
         goto ERROR;
     }
 
+	parse_decl_state_add_decl_spec(T_ENUM);
+
     this_node = parse_tree_node_create(ENUM_SPECIFIER, &lex_tok);
 
     parse_opt(this_node, identifier, HAS_IDENTIFIER);
@@ -379,14 +407,41 @@ static ParseTreeNode *parse_typedef_name(void)
 {
     ParseTreeNode *this_node = parse_tree_node_create(TYPEDEF_NAME, NULL);
     ParseTreeNode *identifier;
+    char *lex_pos_saved;
+    SymtblEntry *typedef_name_entry;
 
-    goto ERROR; /* TODO check if identifier is registered as a typedef use symtbl */
+    lex_pos_saved = lex_tell();
 
-    parse_required(this_node, identifier, ERROR);
+	parse_required(this_node, identifier, ERROR);
 
+	typedef_name_entry = symtbl_get_typedef_name_entry(parse_scope_current, &identifier->tok.literal.sv);
+
+	if (typedef_name_entry == NULL) {
+		goto ERROR;
+	}
+
+    if (typedef_name_entry->eclass != SYM_CLASS_TYPEDEF_NAME) {
+    	goto ERROR;
+    }
+
+	/* TODO add semantical check somehow...
+	if (type_specifier != 0) {
+		goto ERROR;
+	}
+	*/
+
+	decl_state.decl_spec.is_from_typedef = 1;
+
+	decl_state.dtype = *typedef_name_entry->dtype;
+	decl_state.dtype.storage_flags = decl_state.decl_spec.storage_flags;
+	decl_state.dtype.qualifier_flags |= typedef_name_entry->dtype->qualifier_flags;
+    
+/* OK: */
     return this_node;
 
 ERROR:
+	lex_setpos(lex_pos_saved);
+
     parse_tree_node_destroy(this_node);
 
     return NULL;
@@ -397,6 +452,8 @@ static ParseTreeNode *parse_struct_or_union(void)
     switch (yylex()) {
         case T_STRUCT:
         case T_UNION: {
+			parse_decl_state_add_decl_spec(lex_tok.type);
+
             return parse_tree_node_create(STRUCT_OR_UNION, &lex_tok);
         } break;
         default: {
@@ -553,21 +610,36 @@ static ParseTreeNode *parse_pointer(void)
 	ParseTreeNode *type_qualifier;
     ParseTreeNode *pointer;
     char *lex_pos_saved;
+    IRDataType *dtype_saved;
+
+	dtype_saved = ir_dtype_assign(&decl_state.dtype);
+
+	assert(dtype_saved != NULL);
 
     lex_pos_saved = lex_tell();
     
     if (yylex() != '*') {
         goto ERROR;
     }
+
+    parse_decl_state_reset(decl_state.eclass);
     
+    parse_decl_state_add_decl_spec('*');
+
     parse_list_opt(this_node, type_qualifier);
-    
+
+	assert(dtype_saved != NULL);
+
+	ir_dtype_wrap_pointer(&decl_state.dtype, dtype_saved);
+
     parse_opt(this_node, pointer, OK);
 
 OK:
     return this_node;
 
 ERROR:
+	free(dtype_saved);
+
     lex_setpos(lex_pos_saved);
 
     parse_tree_node_destroy(this_node);
@@ -599,9 +671,55 @@ static ParseTreeNode *parse_direct_declarator(void)
     }
 
 AFTER_DIRECT_DECLARATOR:
+	identifier->dtype = ir_dtype_assign(&decl_state.dtype);
+	
     switch(yylex()) {
         case '(': {
+        	Symtbl *scope_saved = parse_scope_current;
+
         	this_node->tok = lex_tok;
+
+			switch(decl_state.eclass) {
+				case SYM_CLASS_FUNCTION: {
+					Symtbl *function_scope;
+					SymtblEntry *function_entry;
+					IRDataType *dtype;
+
+					/* TODO check redeclaration
+					if it exists check the proposed flag "state":
+						if flag == DEFINITION:
+							this is a redeclaration: semantical error
+						if flag == DECLARATION
+							check if arguments match and check later if a definition
+							follows via a state in the parser
+							
+						also check argc
+					*/
+
+					dtype = ir_dtype_assign(&decl_state.dtype);
+
+					function_entry = symtbl_add_function_entry(
+						parse_scope_current, identifier->tok.literal.sv, dtype);
+
+					assert(function_entry != NULL);
+
+					function_entry->scope_self = parse_scope_current;
+
+					identifier->sym = function_entry;
+
+					function_scope = symtbl_create(parse_scope_global);
+
+					assert(function_scope != NULL);
+
+					function_entry->as.function.scope = function_scope;
+
+					parse_function_entry = function_entry;
+
+					parse_scope_current = function_scope;
+				} break;
+				default:
+					assert(0 && "NOT REACHABLE");
+			}
 
             parse_required(this_node, parameter_type_list, NEXT_AFTER_DIRECT_DECLARATOR_CHECK_IDENTIFIER_LIST);
             
@@ -611,6 +729,8 @@ NEXT_AFTER_DIRECT_DECLARATOR_CHECK_IDENTIFIER_LIST:
             parse_list_opt(this_node, identifier);
 
 NEXT_AFTER_DIRECT_DECLARATOR_PARENT:
+			parse_scope_current = scope_saved;
+
             if (yylex() != T_CLOSING_PARENT) {
                 goto ERROR;
             }
@@ -622,6 +742,20 @@ NEXT_AFTER_DIRECT_DECLARATOR_PARENT:
 
             parse_opt(this_node, constant_expression, NEXT_AFTER_DIRECT_DECLARATOR_BRACKET);
 
+			/* TODO check constant_expression for a populated compile time known
+			value. if not exists semantical error. else wrap the constant_expression
+			in an array of the size of the constant_expression.
+			
+			idea which requires the irgen to be
+			implemented in the parser itself (which is already planned) is to
+			save the position
+			before the constant_expression and execute the optimizer with a
+			constant folding module and check if it "folds" to just one entry:
+			distance(before_constant_expression, list_end) == 1
+			this way we only need constant folding per architecture
+			(VM per ptr_size: x86: 4byte, x86_64, aarch64: 8byte) in backend.
+			*/
+
 NEXT_AFTER_DIRECT_DECLARATOR_BRACKET:
 
             if (yylex() != ']') {
@@ -631,14 +765,60 @@ NEXT_AFTER_DIRECT_DECLARATOR_BRACKET:
             break;
         }
         default: {
-            if (this_node->num == 1) {
-                lex_setpos(yytext);
+        	if (this_node->num != 1) {
+        		goto ERROR;
+        	}
 
-                break;
-            }
+			lex_setpos(yytext);
 
-            goto ERROR;
-        }
+            switch(decl_state.eclass) {
+            	/* TODO check redeclaration */
+				case SYM_CLASS_OBJECT: {
+					SymtblEntry *object_entry;
+					IRDataType *dtype;
+					
+					dtype = ir_dtype_assign(&decl_state.dtype);
+
+					object_entry = symtbl_add_object_entry(
+						parse_scope_current, identifier->tok.literal.sv, dtype);
+
+					assert(object_entry != NULL);
+
+					object_entry->scope_self = parse_scope_current;
+
+					identifier->sym = object_entry;
+				} break;
+				case SYM_CLASS_TYPEDEF_NAME: {
+					SymtblEntry *typedef_name_entry;
+					IRDataType *dtype;
+					
+					dtype = ir_dtype_assign(&decl_state.dtype);
+
+					typedef_name_entry = symtbl_add_typedef_name_entry(
+						parse_scope_current, identifier->tok.literal.sv, dtype);
+
+					assert(typedef_name_entry != NULL);
+
+					typedef_name_entry->scope_self = parse_scope_current;
+
+					identifier->sym = typedef_name_entry;
+				} break;
+				case SYM_CLASS_TAG_OF_STRUCT: {
+					// TODO push SymtblEntry on Stack for use of SYM_CLASS_STRUCT_UNION_MEMBER
+					assert(0 && "TODO NOT IMPLEMENTED with (SYM_CLASS_TAG_OF_STRUCT)");
+				} break;
+				case SYM_CLASS_UNION: {
+					// TODO push SymtblEntry on Stack for use of SYM_CLASS_STRUCT_UNION_MEMBER
+					assert(0 && "TODO NOT IMPLEMENTED with (SYM_CLASS_UNION)");
+				} break;
+				case SYM_CLASS_ENUMERATION: {
+					// TODO maybe push SymtblEntry on Stack for use of SYM_CLASS_ENUM_CONSTANT
+					assert(0 && "TODO NOT IMPLEMENTED with (SYM_CLASS_ENUMERATION)");
+				} break;
+				default:
+					assert(0 && "NOT REACHABLE");
+			}
+        } break;
     }
 
     return this_node;
@@ -658,13 +838,15 @@ static ParseTreeNode *parse_parameter_type_list(void)
     char *lex_pos_saved;
 
     lex_pos_saved = lex_tell();
-    
+
     parse_required(this_node, parameter_list, ERROR);
     
     if (yylex() == ',') {
         if (yylex() != T_DOT_DOT_DOT) {
             goto ERROR;
         }
+        
+        assert(0 && "TODO NOT IMPLEMENTED: add ... as IR_TYPE_NONE maybe so argc count grows");
         
         this_node->tok = lex_tok;
     } else {
@@ -1317,7 +1499,7 @@ static ParseTreeNode *parse_cast_expression(void)
         goto ERROR;
     }
 
-    parse_required(this_node, type_name, ERROR);
+    parse_required(this_node, type_name, ERROR); /* TODO dtype unused */
 
     if (yylex() != ')') {
         goto ERROR;
@@ -1390,6 +1572,7 @@ static ParseTreeNode *parse_type_name(void)
     ParseTreeNode *specifier_qualifier;
     ParseTreeNode *abstract_declarator;
 
+	parse_decl_state_reset(SYM_CLASS_UNKNOWN);
 
 	parse_list_required(this_node, specifier_qualifier, ERROR);
 
@@ -1532,6 +1715,18 @@ static ParseTreeNode *parse_primary_expression(void)
     }
 
 OK:
+	if (identifier != NULL && identifier->tok.type == T_IDENTIFIER) {
+		SymtblEntry *object_entry;
+	
+		object_entry = symtbl_get_object_entry(parse_scope_current, &identifier->tok.literal.sv);
+		
+		assert(object_entry != NULL && "semantical error undeclared identifier");
+		
+		identifier->sym = object_entry;
+
+		identifier->dtype = object_entry->dtype;
+	}
+
     return this_node;
 
 ERROR:
@@ -1746,6 +1941,8 @@ static ParseTreeNode *parse_parameter_declaration(void)
     ParseTreeNode *declaration_specifier;
     ParseTreeNode *declarator;
     ParseTreeNode *abstract_declarator;
+
+	parse_decl_state_reset(SYM_CLASS_OBJECT);
 
     parse_list_required(this_node, declaration_specifier, ERROR);
     
@@ -2066,6 +2263,10 @@ static ParseTreeNode *parse_labeled_statement(void)
     if (yylex() != ':') {
         goto ERROR;
     }
+
+	if (this_node->tok.type == T_IDENTIFIER) {
+		symtbl_add_label_entry(parse_scope_function, this_node->tok.literal.sv, NULL);
+	}
 
     parse_required(this_node, statement, ERROR);
 
