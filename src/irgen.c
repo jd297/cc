@@ -38,10 +38,6 @@ static void irgen_c_external_declaration(IR_CTX *ctx, ParseTreeNode *this_node)
 
 static void irgen_c_function_definition(IR_CTX *ctx, ParseTreeNode *this_node)
 {
-	ctx->function_return_type = this_node->dtype;
-
-	ir_emit(ctx, IR_OC_FUNC_BEGIN, this_node->dtype, ir_ssa_from_view(ctx, this_node->sym->id), ir_ssa_from_num(ctx, 0), NULL);
-
 	ctx->label_func_end = ctx->label_tmp++;
 
 	for (size_t i = 0; i < this_node->num; ++i) {
@@ -50,7 +46,14 @@ static void irgen_c_function_definition(IR_CTX *ctx, ParseTreeNode *this_node)
 		switch (node->type) {
 			case DECLARATION_SPECIFIER: break;
 
-			case DECLARATOR: break; // TODO put in params ?
+			case DECLARATOR: {
+				ParseTreeNode *direct_declarator = node->elements[0];
+				ParseTreeNode *identifier = direct_declarator->elements[0];
+				
+				ctx->function_return_type = identifier->dtype;
+
+				ir_emit(ctx, IR_OC_FUNC_BEGIN, identifier->dtype, ir_ssa_from_view(ctx, &identifier->sym->id), ir_ssa_from_num(ctx, 0), NULL);
+			} break;
 
 			case DECLARATION: {
 				assert(0 && "TODO not implemented with: (DECLARATION) (old-style)");
