@@ -675,7 +675,7 @@ AFTER_DIRECT_DECLARATOR:
 	
     switch(yylex()) {
         case '(': {
-        	Symtbl *scope_saved = parse_scope_current;
+        	/* Symtbl *scope_saved = parse_scope_current; */ /* TODO IDK WHY */
 
         	this_node->tok = lex_tok;
 
@@ -729,7 +729,7 @@ NEXT_AFTER_DIRECT_DECLARATOR_CHECK_IDENTIFIER_LIST:
             parse_list_opt(this_node, identifier);
 
 NEXT_AFTER_DIRECT_DECLARATOR_PARENT:
-			parse_scope_current = scope_saved;
+			/* parse_scope_current = scope_saved; */ /* TODO IDK WHY */
 
             if (yylex() != T_CLOSING_PARENT) {
                 goto ERROR;
