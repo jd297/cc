@@ -1818,15 +1818,30 @@ ERROR:
 
 static ParseTreeNode *parse_constant(void)
 {
+	ParseTreeNode *this_node;
+	IRDataType *dtype;
+
     switch(yylex()) {
     	// TODO: case enumeration-constant
-    	case T_INTEGER_CONSTANT:
-    	case T_FLOATING_CONSTANT:
+    	case T_INTEGER_CONSTANT: {
+    		dtype = NULL; /* TODO */
+		} break;
+    	case T_FLOATING_CONSTANT: {
+    		dtype = NULL; /* TODO */
+		} break;
         case T_CHARACTER_CONSTANT: {
-            return parse_tree_node_create(CONSTANT, &lex_tok);
+        	IRPrimitiveDataType p = codegen_get_primitive_data_type(IR_GENERIC_CHAR);
+
+            dtype = ir_dtype_from_primitive(p, IR_QUALIFIER_FLAG_NONE, IR_STORAGE_FLAG_NONE);
         } break;
         default: goto ERROR;
     }
+    
+/* OK: */
+	this_node = parse_tree_node_create(CONSTANT, &lex_tok);
+	this_node->dtype = dtype;
+
+    return this_node;
     
 ERROR:
 	lex_setpos(yytext);
