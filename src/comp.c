@@ -10,7 +10,6 @@
 #include "ir.h"
 #include "opt.h"
 #include "gen.h"
-#include "debug/dot.h"
 
 #include <jd297/lex.h>
 #include <jd297/lmap_sv.h>

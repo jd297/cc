@@ -23,7 +23,7 @@ OBJFILES      = $(BUILDDIR)/lex.o $(BUILDDIR)/lmap.o $(BUILDDIR)/parse.o\
                 $(BUILDDIR)/sv.o $(BUILDDIR)/lmap_sv.o\
                 $(BUILDDIR)/toolchain.o\
                 $(BUILDDIR)/OpenBSD.o $(BUILDDIR)/GNULinux.o\
-                $(BUILDDIR)/symtbl.o $(BUILDDIR)/dot.o
+                $(BUILDDIR)/symtbl.o
 
 HEADERS       = $(SRCDIR)/jd297/lmap.h $(SRCDIR)/jd297/vector.h\
                 $(SRCDIR)/lex.h $(SRCDIR)/parse.h\
@@ -33,7 +33,7 @@ HEADERS       = $(SRCDIR)/jd297/lmap.h $(SRCDIR)/jd297/vector.h\
                 $(SRCDIR)/opt.h $(SRCDIR)/ir.h $(SRCDIR)/gen.h\
                 $(SRCDIR)/jd297/sv.h $(SRCDIR)/jd297/lmap_sv.h\
                 $(SRCDIR)/toolchain.h\
-                $(SRCDIR)/symtbl.h $(SRCDIR)/debug/dot.h $(SRCDIR)/debug/util.h
+                $(SRCDIR)/symtbl.h
 
 all: $(BUILDDIR)/$(TARGET)
 
@@ -102,9 +102,6 @@ $(BUILDDIR)/x86_64.o: $(HEADERS) $(SRCDIR)/gen/x86_64.c
 
 $(BUILDDIR)/aarch64.o: $(HEADERS) $(SRCDIR)/gen/aarch64.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/gen/aarch64.c
-
-$(BUILDDIR)/dot.o: $(HEADERS) $(SRCDIR)/debug/dot.c
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/debug/dot.c
 
 clean:
 	rm -f $(BUILDDIR)/*
