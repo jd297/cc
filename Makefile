@@ -14,16 +14,16 @@ SRCDIR        = src
 BUILDDIR      = build
 DEFSDIR       = defs
 
-OBJFILES      = $(BUILDDIR)/lex.o $(BUILDDIR)/lmap.o $(BUILDDIR)/parse.o\
-                $(BUILDDIR)/cpp.o\
-                $(BUILDDIR)/vector.o $(BUILDDIR)/logger.o $(BUILDDIR)/comp.o\
-                $(BUILDDIR)/list.o $(BUILDDIR)/opt.o $(BUILDDIR)/ir.o\
-                $(BUILDDIR)/x86_64.o $(BUILDDIR)/aarch64.o\
-                $(BUILDDIR)/gen.o\
+OBJFILES      = $(BUILDDIR)/lmap.o $(BUILDDIR)/vector.o $(BUILDDIR)/list.o\
                 $(BUILDDIR)/sv.o $(BUILDDIR)/lmap_sv.o\
+                $(BUILDDIR)/logger.o\
                 $(BUILDDIR)/toolchain.o\
                 $(BUILDDIR)/OpenBSD.o $(BUILDDIR)/GNULinux.o\
-                $(BUILDDIR)/symtbl.o
+                $(BUILDDIR)/ir.o $(BUILDDIR)/symtbl.o $(BUILDDIR)/opt.o\
+                $(BUILDDIR)/gen.o\
+                $(BUILDDIR)/x86_64.o $(BUILDDIR)/aarch64.o\
+                $(BUILDDIR)/comp.o\
+                $(BUILDDIR)/lex.o $(BUILDDIR)/parse.o $(BUILDDIR)/cpp.o
 
 HEADERS       = $(SRCDIR)/jd297/lmap.h $(SRCDIR)/jd297/vector.h\
                 $(SRCDIR)/lex.h $(SRCDIR)/parse.h\
