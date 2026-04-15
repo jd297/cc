@@ -243,5 +243,7 @@ extern IRSSAEnt *ir_ssa_from_ssa(IR_CTX *ctx, IRSSAEnt *ssa);
 
 extern void ir_emit(IR_CTX *ctx, IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, IRSSAEnt *arg2);
 
+extern void ir_dump(IR_CTX *ctx);
+
 #endif
 

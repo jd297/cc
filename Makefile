@@ -23,7 +23,6 @@ OBJFILES      = $(BUILDDIR)/lex.o $(BUILDDIR)/lmap.o $(BUILDDIR)/parse.o\
                 $(BUILDDIR)/sv.o $(BUILDDIR)/lmap_sv.o\
                 $(BUILDDIR)/toolchain.o\
                 $(BUILDDIR)/OpenBSD.o $(BUILDDIR)/GNULinux.o\
-                $(BUILDDIR)/irgen.o $(BUILDDIR)/sem.o\
                 $(BUILDDIR)/symtbl.o $(BUILDDIR)/dot.o
 
 HEADERS       = $(SRCDIR)/jd297/lmap.h $(SRCDIR)/jd297/vector.h\
@@ -33,7 +32,7 @@ HEADERS       = $(SRCDIR)/jd297/lmap.h $(SRCDIR)/jd297/vector.h\
                 $(SRCDIR)/comp.h $(SRCDIR)/jd297/list.h\
                 $(SRCDIR)/opt.h $(SRCDIR)/ir.h $(SRCDIR)/gen.h\
                 $(SRCDIR)/jd297/sv.h $(SRCDIR)/jd297/lmap_sv.h\
-                $(SRCDIR)/toolchain.h $(SRCDIR)/irgen.h $(SRCDIR)/sem.h\
+                $(SRCDIR)/toolchain.h\
                 $(SRCDIR)/symtbl.h $(SRCDIR)/debug/dot.h $(SRCDIR)/debug/util.h
 
 all: $(BUILDDIR)/$(TARGET)

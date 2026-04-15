@@ -141,6 +141,8 @@ extern int parse_error_count;
 
 extern ParseTreeNode *parse_result;
 
+extern IR_CTX *parse_ir_ctx;
+
 extern void parse_tree_node_destroy(ParseTreeNode *node);
 
 #define parse_required(root_node, name, empty_label) \

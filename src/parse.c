@@ -11,6 +11,7 @@
 
 int parse_error_count;
 ParseTreeNode *parse_result;
+IR_CTX *parse_ir_ctx;
 
 static Symtbl *parse_scope_global;
 static Symtbl *parse_scope_function;
@@ -20,6 +21,10 @@ static SymtblEntry *parse_function_entry;
 extern int yyparse(void)
 {
 	if ((parse_scope_global = symtbl_create(NULL)) == NULL) {
+		return -1;
+	}
+
+	if ((parse_ir_ctx = ir_ctx_create()) == NULL) {
 		return -1;
 	}
 

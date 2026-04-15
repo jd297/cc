@@ -8,7 +8,6 @@
 #include "parse.h"
 #include "symtbl.h"
 #include "ir.h"
-#include "irgen.h"
 #include "opt.h"
 #include "gen.h"
 #include "debug/dot.h"
@@ -67,42 +66,19 @@ int compiler_c_run(Compiler_C *compiler)
 		return -1;
 	}
 
-	/*dot_run(parse_result);
+	dot_run(parse_result);
 
-	return 0;*/
+	ir_dump(parse_ir_ctx);
 
-	/*
-	Symtbl *symtbl_root = symtbl_create(NULL);
-	
-	Semantic_C_CTX semantic_ctx = {
-		.error_count = 0,
-		.symtbl = symtbl_root
-	};
+	assert(optimizer_run(parse_ir_ctx) == 0);
 
-	semantic_c_run(&semantic_ctx, translation_unit);
-
-	if (semantic_ctx.error_count > 0) {
-		fprintf(stderr, "%d errors generated.", semantic_ctx.error_count);
-
-		return -1;
-	}
-	*/
-
-	IR_CTX *ir_ctx;
-
-	assert((ir_ctx = ir_ctx_create()) != NULL);
-
-	irgen_c_run(ir_ctx, parse_result);
-
-	assert(optimizer_run(ir_ctx) == 0);
-
-	codegen_func(ir_ctx, compiler->output);
+	codegen_func(parse_ir_ctx, compiler->output);
 
 	parse_tree_node_destroy(parse_result);
 
 	yy_delete_buffer(yystate);
 
-	ir_ctx_destroy(ir_ctx);
+	ir_ctx_destroy(parse_ir_ctx);
 
     return 0;
 }
