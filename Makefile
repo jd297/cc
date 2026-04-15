@@ -76,12 +76,6 @@ $(BUILDDIR)/ir.o: $(HEADERS) $(SRCDIR)/ir.c
 $(BUILDDIR)/symtbl.o: $(HEADERS) $(SRCDIR)/symtbl.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/symtbl.c
 
-$(BUILDDIR)/irgen.o: $(HEADERS) $(SRCDIR)/irgen.c
-	$(CC) $(CFLAGS) -Wno-unused-function -c -o $@ $(SRCDIR)/irgen.c
-
-$(BUILDDIR)/sem.o: $(HEADERS) $(SRCDIR)/sem.c
-	$(CC) $(CFLAGS) -Wno-unused-function -c -o $@ $(SRCDIR)/sem.c
-
 $(BUILDDIR)/sv.o: $(HEADERS) $(SRCDIR)/sv.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/sv.c
 
