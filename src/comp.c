@@ -66,19 +66,17 @@ int compiler_c_run(Compiler_C *compiler)
 		return -1;
 	}
 
-	dot_run(parse_result);
+	ir_dump(ctx);
 
-	ir_dump(parse_ir_ctx);
+	assert(optimizer_run(ctx) == 0);
 
-	assert(optimizer_run(parse_ir_ctx) == 0);
-
-	codegen_func(parse_ir_ctx, compiler->output);
+	codegen_func(ctx, compiler->output);
 
 	parse_tree_node_destroy(parse_result);
 
 	yy_delete_buffer(yystate);
 
-	ir_ctx_destroy(parse_ir_ctx);
+	ir_ctx_destroy(ctx);
 
     return 0;
 }

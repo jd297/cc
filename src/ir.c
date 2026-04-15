@@ -463,9 +463,64 @@ static void ir_dtype_print_as(IRDataType *dtype)
 	}
 }
 
+/*
+struct IRSSAEnt {
+	IRArgType type;
+	
+	union {
+		size_t num;
+		size_t str;
+		size_t *addr;
+		IRLiteral literal;
+		size_t reg;
+		size_t *stack;
+		sv_t mem;
+		sv_t *view;
+		IRSSAEnt *ssa;
+	} as;
+};
+*/
+
 static void ir_dump_ssa_ent(IRSSAEnt *ssa)
 {
-	printf("HIER");
+	printf("{ ");
+
+	switch (ssa->type) {
+		case IR_ATYPE_NUM: {
+			printf("IR_ATYPE_NUM | %zu", ssa->as.num);
+		} break;
+		case IR_ATYPE_ADDR: {
+			printf("IR_ATYPE_ADDR | %zu", *ssa->as.addr);
+		} break;
+		case IR_ATYPE_LIT: {
+			printf("IR_ATYPE_LIT | %lu", ssa->as.literal.lu);
+		} break;
+		case IR_ATYPE_REG: {
+			printf("IR_ATYPE_REG | %zu", ssa->as.num);
+		} break;
+		case IR_ATYPE_STACK: {
+			printf("IR_ATYPE_STACK | %zu", *ssa->as.addr);
+		} break;
+		case IR_ATYPE_MEM: {
+			printf("IR_ATYPE_MEM | "SV_FMT, SV_PARAMS(&ssa->as.mem));
+		} break;
+		case IR_ATYPE_STR: {
+			printf("IR_ATYPE_STR | %zu", ssa->as.str);
+		} break;
+		case IR_ATYPE_VIEW: {
+			printf("IR_ATYPE_VIEW | "SV_FMT, SV_PARAMS(ssa->as.view));
+		} break;
+		case IR_ATYPE_SSA: {
+			printf("IR_ATYPE_SSA | ");
+			ir_dump_ssa_ent(ssa->as.ssa);
+		} break;
+		case IR_ATYPE_NONE: {
+			printf("IR_ATYPE_NONE");
+		} break;
+		default: assert(0 && "NOT REACHABLE");
+	}
+
+	printf(" }");
 }
 
 static void ir_dump_code(IRCode *code)

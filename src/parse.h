@@ -141,7 +141,7 @@ extern int parse_error_count;
 
 extern ParseTreeNode *parse_result;
 
-extern IR_CTX *parse_ir_ctx;
+extern IR_CTX *ctx;
 
 extern void parse_tree_node_destroy(ParseTreeNode *node);
 

@@ -11,7 +11,7 @@
 
 int parse_error_count;
 ParseTreeNode *parse_result;
-IR_CTX *parse_ir_ctx;
+IR_CTX *ctx;
 
 static Symtbl *parse_scope_global;
 static Symtbl *parse_scope_function;
@@ -24,7 +24,7 @@ extern int yyparse(void)
 		return -1;
 	}
 
-	if ((parse_ir_ctx = ir_ctx_create()) == NULL) {
+	if ((ctx = ir_ctx_create()) == NULL) {
 		return -1;
 	}
 
@@ -90,8 +90,14 @@ static ParseTreeNode *parse_function_definition(void)
     parse_required(this_node, declarator, ERROR);
 
     parse_list_opt(this_node, declaration);
+    
+    ctx->label_func_end = ctx->label_tmp++;
+    
+    ir_emit(ctx, IR_OC_FUNC_BEGIN, parse_function_entry->dtype, ir_ssa_from_view(ctx, &parse_function_entry->id), ir_ssa_from_num(ctx, 0), NULL);
 
     parse_required(this_node, compound_statement, ERROR);
+
+	ir_emit(ctx, IR_OC_FUNC_END, NULL, ir_ssa_from_num(ctx, ctx->label_func_end), ir_ssa_from_num(ctx, 0), NULL);
 
     return this_node;
 
@@ -680,7 +686,7 @@ AFTER_DIRECT_DECLARATOR:
 	
     switch(yylex()) {
         case '(': {
-        	/* Symtbl *scope_saved = parse_scope_current; */ /* TODO IDK WHY */
+        	Symtbl *scope_saved = parse_scope_current; /* TODO IDK WHY */
 
         	this_node->tok = lex_tok;
 
@@ -734,7 +740,7 @@ NEXT_AFTER_DIRECT_DECLARATOR_CHECK_IDENTIFIER_LIST:
             parse_list_opt(this_node, identifier);
 
 NEXT_AFTER_DIRECT_DECLARATOR_PARENT:
-			/* parse_scope_current = scope_saved; */ /* TODO IDK WHY */
+			parse_scope_current = scope_saved; /* TODO IDK WHY */
 
             if (yylex() != T_CLOSING_PARENT) {
                 goto ERROR;
@@ -1824,27 +1830,30 @@ ERROR:
 static ParseTreeNode *parse_constant(void)
 {
 	ParseTreeNode *this_node;
+	IRPrimitiveDataType p;
 	IRDataType *dtype;
 
     switch(yylex()) {
     	// TODO: case enumeration-constant
     	case T_INTEGER_CONSTANT: {
-    		dtype = NULL; /* TODO */
+    		p = codegen_get_primitive_data_type(IR_GENERIC_INT); /* TODO */
+    		
 		} break;
     	case T_FLOATING_CONSTANT: {
-    		dtype = NULL; /* TODO */
+    		p = codegen_get_primitive_data_type(IR_GENERIC_FLOAT); /* TODO */
 		} break;
         case T_CHARACTER_CONSTANT: {
-        	IRPrimitiveDataType p = codegen_get_primitive_data_type(IR_GENERIC_CHAR);
-
-            dtype = ir_dtype_from_primitive(p, IR_QUALIFIER_FLAG_NONE, IR_STORAGE_FLAG_NONE);
+        	p = codegen_get_primitive_data_type(IR_GENERIC_CHAR);
         } break;
         default: goto ERROR;
     }
     
 /* OK: */
+	dtype = ir_dtype_from_primitive(p, IR_QUALIFIER_FLAG_NONE, IR_STORAGE_FLAG_NONE);
 	this_node = parse_tree_node_create(CONSTANT, &lex_tok);
 	this_node->dtype = dtype;
+
+	ir_emit(ctx, IR_OC_IMM, dtype, ir_ssa_default(ctx), ir_ssa_from_literal(ctx, lex_tok.literal), NULL);
 
     return this_node;
     
@@ -2488,12 +2497,16 @@ static ParseTreeNode *parse_jump_statement(void)
         case T_GOTO: {
     		this_node->tok = lex_tok;
 
-            parse_required(this_node, identifier, NEXT_TOKEN_SEMICOLON);
+            parse_required(this_node, identifier, ERROR);
         } break;
         case T_RETURN: {
         	this_node->tok = lex_tok;
 
-            parse_opt(this_node, expression, NEXT_TOKEN_SEMICOLON);
+            parse_required(this_node, expression, EMIT_RETURN_JUMP);
+
+            ir_emit(ctx, IR_OC_RET, parse_function_entry->dtype, ir_ssa_latest(ctx), NULL, NULL);
+EMIT_RETURN_JUMP:
+            ir_emit(ctx, IR_OC_JMP, NULL, ir_ssa_from_num(ctx, ctx->label_func_end), NULL, NULL);
         } break;
         case T_CONTINUE:
         case T_BREAK: {
@@ -2502,7 +2515,6 @@ static ParseTreeNode *parse_jump_statement(void)
         default: goto ERROR;
     }
 
-NEXT_TOKEN_SEMICOLON:
     if (yylex() != ';') {
     	goto ERROR;
     }
