@@ -10,8 +10,6 @@
 #include "ir.h"
 
 int parse_error_count;
-ParseTreeNode *parse_result;
-IR_CTX *ctx;
 
 static Symtbl *parse_scope_global;
 static Symtbl *parse_scope_function;

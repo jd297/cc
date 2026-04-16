@@ -151,8 +151,10 @@ typedef struct {
 	IRDataType *function_return_type;
 } IR_CTX;
 
-extern IR_CTX *ir_ctx_create(void);
-extern void ir_ctx_destroy(IR_CTX *ctx);
+extern IR_CTX *ir_ctx;
+
+extern int ir_ctx_create(void);
+extern void ir_ctx_destroy(void);
 
 typedef enum {
 	IR_OC_FUNC_BEGIN,
@@ -230,20 +232,20 @@ typedef struct {
 	IRSSAEnt *result;
 } IRCode;
 
-extern IRSSAEnt *ir_ssa_latest(IR_CTX *ctx);
-extern IRSSAEnt *ir_ssa_default(IR_CTX *ctx);
-extern IRSSAEnt *ir_ssa_from_view(IR_CTX *ctx, sv_t *view);
-extern IRSSAEnt *ir_ssa_from_num(IR_CTX *ctx, size_t num);
-extern IRSSAEnt *ir_ssa_from_str(IR_CTX *ctx, size_t str);
-extern IRSSAEnt *ir_ssa_from_stack(IR_CTX *ctx, size_t *stack);
-extern IRSSAEnt *ir_ssa_from_addr(IR_CTX *ctx, size_t *addr);
-extern IRSSAEnt *ir_ssa_from_literal(IR_CTX *ctx, IRLiteral literal);
-extern IRSSAEnt *ir_ssa_from_reg(IR_CTX *ctx, size_t reg);
-extern IRSSAEnt *ir_ssa_from_ssa(IR_CTX *ctx, IRSSAEnt *ssa);
+extern IRSSAEnt *ir_ssa_latest(void);
+extern IRSSAEnt *ir_ssa_default(void);
+extern IRSSAEnt *ir_ssa_from_view(sv_t *view);
+extern IRSSAEnt *ir_ssa_from_num(size_t num);
+extern IRSSAEnt *ir_ssa_from_str(size_t str);
+extern IRSSAEnt *ir_ssa_from_stack(size_t *stack);
+extern IRSSAEnt *ir_ssa_from_addr(size_t *addr);
+extern IRSSAEnt *ir_ssa_from_literal(IRLiteral literal);
+extern IRSSAEnt *ir_ssa_from_reg(size_t reg);
+extern IRSSAEnt *ir_ssa_from_ssa(IRSSAEnt *ssa);
 
-extern void ir_emit(IR_CTX *ctx, IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, IRSSAEnt *arg2);
+extern void ir_emit(IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, IRSSAEnt *arg2);
 
-extern void ir_dump(IR_CTX *ctx);
+extern void ir_dump(void);
 
 #endif
 

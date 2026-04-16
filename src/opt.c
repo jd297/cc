@@ -5,27 +5,27 @@
 #include "opt.h"
 #include "gen.h"
 
-extern int optimizer_func_begin(IR_CTX *ctx, list_node_t *it);
+extern int optimizer_func_begin(list_node_t *it);
 
-extern int optimizer_func_end(IR_CTX *ctx, list_node_t *it);
+extern int optimizer_func_end(list_node_t *it);
 
-extern int optimizer_stack_allocation(IR_CTX *ctx, list_node_t *it);
+extern int optimizer_stack_allocation(list_node_t *it);
 
-extern int optimizer_string(IR_CTX *ctx, list_node_t *it);
+extern int optimizer_string(list_node_t *it);
 
-int optimizer_run(IR_CTX *ctx)
+int optimizer_run(void)
 {
-	for (list_node_t *it = list_begin(ctx->code); it != list_end(ctx->code); it = list_next(it)) {
+	for (list_node_t *it = list_begin(ir_ctx->code); it != list_end(ir_ctx->code); it = list_next(it)) {
 		IRCode *code = it->value;
 		
 		switch (code->op) {
 			case IR_OC_FUNC_BEGIN: {
-				if (optimizer_func_begin(ctx, it) != 0) {
+				if (optimizer_func_begin(it) != 0) {
 					return -1;
 				}
 			} break;
 			case IR_OC_FUNC_END: {
-				if (optimizer_func_end(ctx, it) != 0) {
+				if (optimizer_func_end(it) != 0) {
 					return -1;
 				}
 			} break;
@@ -36,45 +36,45 @@ int optimizer_run(IR_CTX *ctx)
 	return 0;
 }
 
-int optimizer_func_begin(IR_CTX *ctx, list_node_t *it)
+int optimizer_func_begin(list_node_t *it)
 {
-	if (optimizer_stack_allocation(ctx, it) == -1) {
+	if (optimizer_stack_allocation(it) == -1) {
 		return -1;	
 	}
 
 	return 0;
 }
 
-int optimizer_func_end(IR_CTX *ctx, list_node_t *it)
+int optimizer_func_end(list_node_t *it)
 {
-	if (optimizer_string(ctx, it) == -1) {
+	if (optimizer_string(it) == -1) {
 		return -1;	
 	}
 
 	return 0;
 }
 
-int optimizer_stack_allocation(IR_CTX *ctx, list_node_t *begin)
+int optimizer_stack_allocation(list_node_t *begin)
 {
 	IRCode *func_begin_code = begin->value;
 
-	for (list_node_t *it = begin; it != list_end(ctx->code); ) {
+	for (list_node_t *it = begin; it != list_end(ir_ctx->code); ) {
 		IRCode *code = it->value;
 		
 		switch (code->op) {
 			case IR_OC_LOCAL: {
 				// TODO align to 8byte is there to make it simple
-				ctx->stack_offset += 8; // codegen_get_type_size(code->result.rtype);
+				ir_ctx->stack_offset += 8; // codegen_get_type_size(code->result.rtype);
 			
-				*code->result->as.stack = ctx->stack_offset;
+				*code->result->as.stack = ir_ctx->stack_offset;
 
-				it = list_erase(ctx->code, it);
+				it = list_erase(ir_ctx->code, it);
 			} break;
 			case IR_OC_FUNC_END: {
-				func_begin_code->arg1->as.num = ctx->stack_offset;
-				code->arg1->as.num = ctx->stack_offset;
+				func_begin_code->arg1->as.num = ir_ctx->stack_offset;
+				code->arg1->as.num = ir_ctx->stack_offset;
 
-				ctx->stack_offset = 0;
+				ir_ctx->stack_offset = 0;
 
 				return 0;
 			} break;
@@ -99,9 +99,9 @@ int optimizer_stack_allocation(IR_CTX *ctx, list_node_t *begin)
 			case IR_OC_STORE:
 			case IR_OC_CALL: {
 				if (code->result != NULL && code->result->type == IR_ATYPE_NUM) {
-					ctx->stack_offset += 8; // codegen_get_type_size(code->result.rtype);
+					ir_ctx->stack_offset += 8; // codegen_get_type_size(code->result.rtype);
 			
-					code->result->as.num = ctx->stack_offset;
+					code->result->as.num = ir_ctx->stack_offset;
 				}
 			} // NO BREAK
 			default: {
@@ -113,15 +113,15 @@ int optimizer_stack_allocation(IR_CTX *ctx, list_node_t *begin)
 	return -1;
 }
 
-int optimizer_string(IR_CTX *ctx, list_node_t *end)
+int optimizer_string(list_node_t *end)
 {
-	for (list_node_t *it = end; it != list_begin(ctx->code); ) {
+	for (list_node_t *it = end; it != list_begin(ir_ctx->code); ) {
 		IRCode *code = it->value;
 		
 		switch (code->op) {
 			case IR_OC_STRING: {
-				list_insert(ctx->code, list_next(end), code);
-				it = list_erase(ctx->code, it);
+				list_insert(ir_ctx->code, list_next(end), code);
+				it = list_erase(ir_ctx->code, it);
 			} break;
 			case IR_OC_FUNC_BEGIN: return 0;
 			default: it = list_prev(it); break;

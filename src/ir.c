@@ -8,6 +8,8 @@
 
 #include "ir.h"
 
+IR_CTX *ir_ctx;
+
 IRDataType *ir_dtype_assign(IRDataType *src)
 {
 	IRDataType *dtype = malloc(sizeof(IRDataType));
@@ -111,15 +113,14 @@ IRLiteral ir_literal_from_sv(sv_t sv)
 	return lit;
 }
 
-IR_CTX *ir_ctx_create(void)
+int ir_ctx_create(void)
 {
-	IR_CTX *ctx;
 	list_t *code;
 	list_t *ssa;
 
-	ctx = calloc(1, sizeof(IR_CTX));
+	ir_ctx = calloc(1, sizeof(IR_CTX));
 
-	assert(ctx != NULL);
+	assert(ir_ctx != NULL);
 
 	code = malloc(sizeof(list_t));
 
@@ -127,7 +128,7 @@ IR_CTX *ir_ctx_create(void)
 	
 	assert(list_create(code) != -1);
 	
-	ctx->code_current = list_begin(code);
+	ir_ctx->code_current = list_begin(code);
 
 	ssa = malloc(sizeof(list_t));
 
@@ -135,146 +136,146 @@ IR_CTX *ir_ctx_create(void)
 	
 	assert(list_create(ssa) != -1);
 
-	ctx->code = code;
-	ctx->ssa = ssa;
+	ir_ctx->code = code;
+	ir_ctx->ssa = ssa;
 	
-	return ctx;
+	return 0;
 }
 
-void ir_ctx_destroy(IR_CTX *ctx)
+void ir_ctx_destroy(void)
 {
-	assert(ctx != NULL);
-	assert(ctx->code != NULL);
-	assert(ctx->ssa != NULL);
+	assert(ir_ctx != NULL);
+	assert(ir_ctx->code != NULL);
+	assert(ir_ctx->ssa != NULL);
 
 	/* TODO free entries in code and ssa */
 
-	list_free(ctx->code);
-	list_free(ctx->ssa);
+	list_free(ir_ctx->code);
+	list_free(ir_ctx->ssa);
 
-	free(ctx->code);
-	free(ctx->ssa);
-	free(ctx);
+	free(ir_ctx->code);
+	free(ir_ctx->ssa);
+	free(ir_ctx);
 }
 
-IRSSAEnt *ir_ssa_latest(IR_CTX *ctx)
+IRSSAEnt *ir_ssa_latest(void)
 {
-	return ctx->ssa_latest;
+	return ir_ctx->ssa_latest;
 }
 
-IRSSAEnt *ir_ssa_default(IR_CTX *ctx)
+IRSSAEnt *ir_ssa_default(void)
 {
 	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_NUM;
 	ssa->as.num = 0;
 
-	list_insert(ctx->ssa, list_end(ctx->ssa), ssa);
+	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ssa);
 
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_view(IR_CTX *ctx, sv_t *view)
+IRSSAEnt *ir_ssa_from_view(sv_t *view)
 {
 	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_VIEW;
 	ssa->as.view = view;
 
-	list_insert(ctx->ssa, list_end(ctx->ssa), ssa);
+	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ssa);
 
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_num(IR_CTX *ctx, size_t num)
+IRSSAEnt *ir_ssa_from_num(size_t num)
 {
 	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_NUM;
 	ssa->as.num = num;
 
-	list_insert(ctx->ssa, list_end(ctx->ssa), ssa);
+	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ssa);
 
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_str(IR_CTX *ctx, size_t str)
+IRSSAEnt *ir_ssa_from_str(size_t str)
 {
 	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_STR;
 	ssa->as.str = str;
 
-	list_insert(ctx->ssa, list_end(ctx->ssa), ssa);
+	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ssa);
 
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_stack(IR_CTX *ctx, size_t *stack)
+IRSSAEnt *ir_ssa_from_stack(size_t *stack)
 {
 	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_STACK;
 	ssa->as.stack = stack;
 
-	list_insert(ctx->ssa, list_end(ctx->ssa), ssa);
+	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ssa);
 
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_addr(IR_CTX *ctx, size_t *addr)
+IRSSAEnt *ir_ssa_from_addr(size_t *addr)
 {
 	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_ADDR;
 	ssa->as.addr = addr;
 
-	list_insert(ctx->ssa, list_end(ctx->ssa), ssa);
+	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ssa);
 
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_literal(IR_CTX *ctx, IRLiteral literal)
+IRSSAEnt *ir_ssa_from_literal(IRLiteral literal)
 {
 	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_LIT;
 	ssa->as.literal = literal;
 
-	list_insert(ctx->ssa, list_end(ctx->ssa), ssa);
+	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ssa);
 
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_reg(IR_CTX *ctx, size_t reg)
+IRSSAEnt *ir_ssa_from_reg(size_t reg)
 {
 	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_REG;
 	ssa->as.reg = reg;
 
-	list_insert(ctx->ssa, list_end(ctx->ssa), ssa);
+	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ssa);
 
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_ssa(IR_CTX *ctx, IRSSAEnt *ssa)
+IRSSAEnt *ir_ssa_from_ssa(IRSSAEnt *ssa)
 {
 	IRSSAEnt *ent = malloc(sizeof(IRSSAEnt));
 
 	ent->type = IR_ATYPE_SSA;
 	ent->as.ssa = ssa;
 
-	list_insert(ctx->ssa, list_end(ctx->ssa), ent);
+	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ent);
 
 	return ent;
 }
 
-void ir_emit(IR_CTX *ctx, IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, IRSSAEnt *arg2)
+void ir_emit(IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, IRSSAEnt *arg2)
 {
 	IRCode *code;
 
-	assert(ctx != NULL);
+	assert(ir_ctx != NULL);
 
 	code = malloc(sizeof(IRCode));
 
@@ -286,10 +287,10 @@ void ir_emit(IR_CTX *ctx, IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSS
 	code->arg2 = arg2;
 	code->result = result;
 
-	ctx->code_current = list_insert(ctx->code, ctx->code_current == list_end(ctx->code) ? ctx->code_current : list_next(ctx->code_current), code);
+	ir_ctx->code_current = list_insert(ir_ctx->code, ir_ctx->code_current == list_end(ir_ctx->code) ? ir_ctx->code_current : list_next(ir_ctx->code_current), code);
 	
 	if (result != NULL) {
-		ctx->ssa_latest = result;
+		ir_ctx->ssa_latest = result;
 	}
 }
 /* -------------------------------------------------------------------------- */
@@ -463,24 +464,6 @@ static void ir_dtype_print_as(IRDataType *dtype)
 	}
 }
 
-/*
-struct IRSSAEnt {
-	IRArgType type;
-	
-	union {
-		size_t num;
-		size_t str;
-		size_t *addr;
-		IRLiteral literal;
-		size_t reg;
-		size_t *stack;
-		sv_t mem;
-		sv_t *view;
-		IRSSAEnt *ssa;
-	} as;
-};
-*/
-
 static void ir_dump_ssa_ent(IRSSAEnt *ssa)
 {
 	printf("{ ");
@@ -557,11 +540,11 @@ static void ir_dump_code(IRCode *code)
 	printf("\"]\n");
 }
 
-void ir_dump(IR_CTX *ctx)
+void ir_dump(void)
 {
 	printf("digraph graphname {\n");
 
-	for (list_node_t *it = list_begin(ctx->code); it != list_end(ctx->code); it = list_next(it)) {
+	for (list_node_t *it = list_begin(ir_ctx->code); it != list_end(ir_ctx->code); it = list_next(it)) {
 		list_node_t *prev;
 		
 		ir_dump_code(it->value);

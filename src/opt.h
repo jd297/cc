@@ -3,6 +3,6 @@
 
 #include "ir.h"
 
-extern int optimizer_run(IR_CTX *ir_ctx);
+extern int optimizer_run(void);
 
 #endif

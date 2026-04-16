@@ -5,7 +5,7 @@
 
 #include "ir.h"
 
-typedef void (*codegen_run_func)(IR_CTX *ctx, FILE *output);
+typedef void (*codegen_run_func)(FILE *output);
 
 extern codegen_run_func codegen_func;
 
@@ -13,8 +13,8 @@ extern IRPrimitiveDataType codegen_get_primitive_data_type(IRGenericPrimitiveDat
 
 extern size_t codegen_get_type_size(IRDataType *dtype);
 
-extern void codegen_x86_64_run(IR_CTX *ctx, FILE *output);
+extern void codegen_x86_64_run(FILE *output);
 
-extern void codegen_aarch64_run(IR_CTX *ctx, FILE *output);
+extern void codegen_aarch64_run(FILE *output);
 
 #endif

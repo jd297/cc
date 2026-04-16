@@ -104,7 +104,7 @@ $(BUILDDIR)/aarch64.o: $(HEADERS) $(SRCDIR)/gen/aarch64.c
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/gen/aarch64.c
 
 clean:
-	rm -f $(BUILDDIR)/*
+	rm -f $(BUILDDIR)/* $(SRCDIR)/lex_kw.h
 
 install: $(BUILDDIR)/$(TARGET)
 	cp $(BUILDDIR)/$(TARGET) $(BINDIR)/$(TARGET)
