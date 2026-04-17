@@ -287,10 +287,31 @@ void ir_emit(IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, I
 	code->arg2 = arg2;
 	code->result = result;
 
+	switch (op) {
+		case IR_OC_FUNC_BEGIN: {
+			ir_ctx->label_func_end = ir_ctx->label_tmp++;
+			
+			if (dtype == NULL) code->dtype = ir_ctx->function_return_type;
+			if (arg1 == NULL) code->arg1 = ir_ssa_from_num(0);
+		} break;
+		case IR_OC_FUNC_END: {
+			if (result == NULL) code->result = ir_ssa_from_num(ir_ctx->label_func_end);
+			if (arg1 == NULL) code->arg1 = ir_ssa_from_num(0);
+		} break;
+		case IR_OC_RET: {
+			if (dtype == NULL) code->dtype = ir_ctx->function_return_type;
+			if (result == NULL) code->result = ir_ssa_latest();
+		} break;
+		case IR_OC_IMM: {
+			if (result == NULL) code->result = ir_ssa_default();		
+		} break;
+		default: break;
+	}
+
 	ir_ctx->code_current = list_insert(ir_ctx->code, ir_ctx->code_current == list_end(ir_ctx->code) ? ir_ctx->code_current : list_next(ir_ctx->code_current), code);
-	
-	if (result != NULL) {
-		ir_ctx->ssa_latest = result;
+
+	if (code->result != NULL) {
+		ir_ctx->ssa_latest = code->result;
 	}
 }
 /* -------------------------------------------------------------------------- */

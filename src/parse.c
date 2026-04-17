@@ -77,18 +77,12 @@ static ParseReturn parse_function_definition(void)
     parse_required(parse_declarator, ERROR);
 
     parse_list_opt(parse_declaration);
-    
-    
-    /* TODO THIS SHOULD BE A IMPLICIT SIDE EFFECT BY IR_OC_FUNC_BEGIN */
-    ir_ctx->label_func_end = ir_ctx->label_tmp++;
-    
-    /* TODO USE IMPLICIT EMIT PARAMS BY JUST PASSING NULL*/
-    ir_emit(IR_OC_FUNC_BEGIN, ir_ctx->function_return_type, ir_ssa_from_view(&parse_function_entry->id), ir_ssa_from_num(0), NULL);
+
+    ir_emit(IR_OC_FUNC_BEGIN, NULL, ir_ssa_from_view(&parse_function_entry->id), NULL, NULL);
 
     parse_required(parse_compound_statement, ERROR);
 
-	/* TODO USE IMPLICIT EMIT PARAMS BY JUST PASSING NULL*/
-	ir_emit(IR_OC_FUNC_END, NULL, ir_ssa_from_num(ir_ctx->label_func_end), ir_ssa_from_num(0), NULL);
+	ir_emit(IR_OC_FUNC_END, NULL, NULL, NULL, NULL);
 
     return PARSE_OK;
 
@@ -1496,8 +1490,7 @@ static ParseReturn parse_constant(void)
 /* OK: */
 	dtype = ir_dtype_from_primitive(p, IR_QUALIFIER_FLAG_NONE, IR_STORAGE_FLAG_NONE);
 
-	/* TODO USE IMPLICIT EMIT PARAMS BY JUST PASSING NULL (IR_OC_IMM: RESULT = default) */
-	ir_emit(IR_OC_IMM, dtype, ir_ssa_default(), ir_ssa_from_literal(lex_tok.literal), NULL);
+	ir_emit(IR_OC_IMM, dtype, NULL, ir_ssa_from_literal(lex_tok.literal), NULL);
 
     return PARSE_OK;
     
@@ -2064,18 +2057,11 @@ static ParseReturn parse_jump_statement(void)
             parse_required(parse_identifier, ERROR);
         } break;
         case T_RETURN: {
-            parse_required(parse_expression, EMIT_RETURN_JUMP);
+        	if (parse_expression() == PARSE_OK) {
+            	ir_emit(IR_OC_RET, NULL, NULL, NULL, NULL);
+            }
 
-			/* TODO OR MAYBE LET's create MACROS FOR IMPLICIT STUFF
-			*/
-			/* TODO MAYBE COMBINE THIS TWO IN ONE per ir_emit:
-			if result == NULL, only JMP
-			*/
-			/* TODO USE IMPLICIT EMIT PARAMS BY JUST PASSING NULL (IR_OC_RET: TYPE = funcreturn), RESULT: ir_ssa_latest() */
-            ir_emit(IR_OC_RET, parse_function_entry->dtype, ir_ssa_latest(), NULL, NULL);
-EMIT_RETURN_JUMP:
-			/* TODO USE IMPLICIT EMIT PARAMS BY JUST PASSING NULL (IR_OC_JMP: TYPE = funcreturn) */
-            ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(ir_ctx->label_func_end), NULL, NULL);
+			ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(ir_ctx->label_func_end), NULL, NULL);
         } break;
         case T_CONTINUE:
         case T_BREAK: {
