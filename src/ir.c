@@ -163,12 +163,13 @@ IRSSAEnt *ir_ssa_latest(void)
 	return ir_ctx->ssa_latest;
 }
 
-IRSSAEnt *ir_ssa_default(void)
+IRSSAEnt *ir_ssa_default(IRDataType *dtype)
 {
-	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
+	IRSSAEnt *ssa = calloc(1, sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_NUM;
 	ssa->as.num = 0;
+	ssa->dtype = dtype;
 
 	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ssa);
 
@@ -177,7 +178,7 @@ IRSSAEnt *ir_ssa_default(void)
 
 IRSSAEnt *ir_ssa_from_view(sv_t *view)
 {
-	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
+	IRSSAEnt *ssa = calloc(1, sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_VIEW;
 	ssa->as.view = view;
@@ -189,7 +190,7 @@ IRSSAEnt *ir_ssa_from_view(sv_t *view)
 
 IRSSAEnt *ir_ssa_from_num(size_t num)
 {
-	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
+	IRSSAEnt *ssa = calloc(1, sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_NUM;
 	ssa->as.num = num;
@@ -201,7 +202,7 @@ IRSSAEnt *ir_ssa_from_num(size_t num)
 
 IRSSAEnt *ir_ssa_from_str(size_t str)
 {
-	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
+	IRSSAEnt *ssa = calloc(1, sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_STR;
 	ssa->as.str = str;
@@ -213,7 +214,7 @@ IRSSAEnt *ir_ssa_from_str(size_t str)
 
 IRSSAEnt *ir_ssa_from_stack(size_t *stack)
 {
-	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
+	IRSSAEnt *ssa = calloc(1, sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_STACK;
 	ssa->as.stack = stack;
@@ -225,7 +226,7 @@ IRSSAEnt *ir_ssa_from_stack(size_t *stack)
 
 IRSSAEnt *ir_ssa_from_addr(size_t *addr)
 {
-	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
+	IRSSAEnt *ssa = calloc(1, sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_ADDR;
 	ssa->as.addr = addr;
@@ -235,24 +236,26 @@ IRSSAEnt *ir_ssa_from_addr(size_t *addr)
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_literal(IRLiteral literal)
+IRSSAEnt *ir_ssa_from_literal(IRLiteral literal, IRDataType *dtype)
 {
-	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
+	IRSSAEnt *ssa = calloc(1, sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_LIT;
 	ssa->as.literal = literal;
+	ssa->dtype = dtype;
 
 	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ssa);
 
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_reg(size_t reg)
+IRSSAEnt *ir_ssa_from_reg(size_t reg, IRDataType *dtype)
 {
-	IRSSAEnt *ssa = malloc(sizeof(IRSSAEnt));
+	IRSSAEnt *ssa = calloc(1, sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_REG;
 	ssa->as.reg = reg;
+	ssa->dtype = dtype;
 
 	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ssa);
 
@@ -261,7 +264,7 @@ IRSSAEnt *ir_ssa_from_reg(size_t reg)
 
 IRSSAEnt *ir_ssa_from_ssa(IRSSAEnt *ssa)
 {
-	IRSSAEnt *ent = malloc(sizeof(IRSSAEnt));
+	IRSSAEnt *ent = calloc(1, sizeof(IRSSAEnt));
 
 	ent->type = IR_ATYPE_SSA;
 	ent->as.ssa = ssa;
@@ -303,7 +306,27 @@ void ir_emit(IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, I
 			if (result == NULL) code->result = ir_ssa_latest();
 		} break;
 		case IR_OC_IMM: {
-			if (result == NULL) code->result = ir_ssa_default();		
+			if (result == NULL) code->result = ir_ssa_default(code->dtype);
+		} break;
+		case IR_OC_SAL:
+		case IR_OC_SAR:
+		case IR_OC_ADD:
+		case IR_OC_SUB:
+		case IR_OC_MUL:
+		case IR_OC_DIV:
+		case IR_OC_MOD:
+		case IR_OC_OR:
+		case IR_OC_XOR:
+		case IR_OC_NOT:
+		case IR_OC_AND:
+		case IR_OC_EQ:
+		case IR_OC_NEQ:
+		case IR_OC_GT:
+		case IR_OC_LT:
+		case IR_OC_GTE:
+		case IR_OC_LTE: {
+			if (dtype == NULL) code->dtype = ir_arithmetic_dtype(arg1->dtype, arg2->dtype);
+			if (result == NULL) code->result = ir_ssa_default(code->dtype);
 		} break;
 		default: break;
 	}
@@ -314,6 +337,13 @@ void ir_emit(IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, I
 		ir_ctx->ssa_latest = code->result;
 	}
 }
+
+extern IRDataType *ir_arithmetic_dtype(IRDataType *lhs, IRDataType *rhs)
+{
+	/* TODO JUST TO MAKE IT WORK*/
+	return lhs;
+}
+
 /* -------------------------------------------------------------------------- */
 #include <stdio.h>
 

@@ -572,8 +572,6 @@ ERROR:
 
 static ParseReturn parse_direct_declarator(void)
 {
-	SymtblEntry *sym_entry;
-	Symtbl *function_scope = NULL;
 	char *lex_pos_saved = lex_tell();
 
 	if (yylex() == T_IDENTIFIER) {
@@ -607,6 +605,7 @@ NEXT:
 		switch (yylex()) {
 			case '(': {
 				/* TODO CHECK REDECLARATION */
+				Symtbl *function_scope = NULL;
 				Symtbl *scope_saved = parse_scope_current;
 				SymtblEntryClass eclass = decl_state.eclass;
 				SymtblEntry *sym_entry = symtbl_add_function_entry(
@@ -1127,36 +1126,46 @@ ERROR:
 
 static ParseReturn parse_additive_expression(void)
 {
+	IROpCode op;
+	IRSSAEnt *lhs;
     char *lex_pos_saved;
 
     lex_pos_saved = lex_tell();
     
     parse_required(parse_multiplicative_expression, ERROR);
+    
+    lhs = ir_ssa_latest();
 
    	switch (yylex()) {
-        case T_PLUS:
-        case T_MINUS: {
-            parse_required(parse_multiplicative_expression, ERROR);
-        } break;
+        case T_PLUS: op = IR_OC_ADD; break;
+        case T_MINUS: op = IR_OC_SUB; break;
         default: {
             lex_setpos(yytext);
 
             goto OK;
         }
     }
+    
+    parse_required(parse_multiplicative_expression, ERROR);
+    
+    ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
 
     while (1) {
-       switch (yylex()) {
-            case T_PLUS:
-            case T_MINUS: {
-                parse_required(parse_multiplicative_expression, ERROR);
-            } break;
-            default: {
-                lex_setpos(yytext);
+		lhs = ir_ssa_latest();
+    	
+		switch (yylex()) {
+			case T_PLUS: op = IR_OC_ADD; break;
+        	case T_MINUS: op = IR_OC_SUB; break;
+			default: {
+				lex_setpos(yytext);
 
-                goto OK;
-            }
-        }
+				goto OK;
+			}
+		}
+
+		parse_required(parse_multiplicative_expression, ERROR);
+
+		ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
     }
 
 OK:
@@ -1170,38 +1179,48 @@ ERROR:
 
 static ParseReturn parse_multiplicative_expression(void)
 {
+	IROpCode op;
+	IRSSAEnt *lhs;
     char *lex_pos_saved;
 
     lex_pos_saved = lex_tell();
     
     parse_required(parse_cast_expression, ERROR);
 
+	lhs = ir_ssa_latest();
+
    	switch (yylex()) {
-        case '*':
-        case '/':
-        case '%': {
-            parse_required(parse_cast_expression, ERROR);
-        } break;
+        case '*': op = IR_OC_MUL; break;
+        case '/': op = IR_OC_DIV; break;
+        case '%':  op = IR_OC_MOD; break;
         default: {
             lex_setpos(yytext);
 
             goto OK;
         }
     }
+    
+    parse_required(parse_cast_expression, ERROR);
+
+	ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
 
     while (1) {
+    	lhs = ir_ssa_latest();
+
        switch (yylex()) {
-            case '*':
-            case '/':
-            case '%': {
-                parse_required(parse_cast_expression, ERROR);
-            } break;
+            case '*': op = IR_OC_MUL; break;
+		    case '/': op = IR_OC_DIV; break;
+		    case '%':  op = IR_OC_MOD; break;
             default: {
                 lex_setpos(yytext);
 
                 goto OK;
             }
         }
+        
+        parse_required(parse_cast_expression, ERROR);
+        
+        ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
     }
 
 OK:
@@ -1490,7 +1509,7 @@ static ParseReturn parse_constant(void)
 /* OK: */
 	dtype = ir_dtype_from_primitive(p, IR_QUALIFIER_FLAG_NONE, IR_STORAGE_FLAG_NONE);
 
-	ir_emit(IR_OC_IMM, dtype, NULL, ir_ssa_from_literal(lex_tok.literal), NULL);
+	ir_emit(IR_OC_IMM, dtype, NULL, ir_ssa_from_literal(lex_tok.literal, dtype), NULL);
 
     return PARSE_OK;
     
