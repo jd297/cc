@@ -857,37 +857,61 @@ ERROR:
 
 static ParseReturn parse_logical_and_expression(void)
 {
+    const IRDataType *logical_and_dtype = ir_dtype_from_primitive(
+		codegen_get_primitive_data_type(IR_GENERIC_INT),
+		IR_QUALIFIER_FLAG_NONE, IR_STORAGE_FLAG_NONE);
+	IRSSAEnt *dssa;
+	size_t logical_label_end;
+    size_t logical_label_false;
+    int has_operator = 0;
     char *lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
-    parse_required(parse_inclusive_or_expression, ERROR);
+	while (1) {
+		parse_required(parse_inclusive_or_expression, ERROR);
 
-    switch (yylex()) {
-        case T_LOGICAL_AND: {
-            parse_required(parse_inclusive_or_expression, ERROR);
-        } break;
-        default: {
-            lex_setpos(yytext);
+		if (yylex() == T_LOGICAL_AND) {
+			if (has_operator == 0) {
+				logical_label_end = ir_ctx->label_tmp++;
+				logical_label_false = ir_ctx->label_tmp++;
+			}
 
-            goto OK;
-        }
-    }
+			has_operator = 1;
+		}
+		
+		if (has_operator == 1) {
+			ir_emit(IR_OC_JMP_ZERO, ir_ssa_latest()->dtype, ir_ssa_from_num(logical_label_false), ir_ssa_latest(), NULL);
+		}
+		
+		if (lex_tok.type != T_LOGICAL_AND) {
+			lex_setpos(yytext);
 
-    while (1) {
-       switch (yylex()) {
-            case T_LOGICAL_AND: {
-                parse_required(parse_inclusive_or_expression, ERROR);
-            } break;
-            default: {
-                lex_setpos(yytext);
-
-                goto OK;
-            }
-        }
-    }
+			goto OK;
+		}
+	}
 
 OK:
+	if (has_operator == 0) {
+		return PARSE_OK;
+	}
+
+	/* TAIL CODE */
+	dssa = ir_ssa_default(logical_and_dtype);
+
+	/* DEFAULT IS TRUE */
+	ir_emit(IR_OC_IMM, logical_and_dtype, dssa, ir_ssa_from_literal(ir_literal_from_lu(1),logical_and_dtype), NULL);
+    ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(logical_label_end), NULL, NULL);
+
+    /* LABEL FALSE */
+    ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(logical_label_false), NULL, NULL);
+    ir_emit(IR_OC_IMM, logical_and_dtype, dssa, ir_ssa_from_literal(ir_literal_from_lu(0), logical_and_dtype), NULL);
+
+    /* LABEL END */
+    ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(logical_label_end), NULL, NULL);
+
+    ir_ctx->ssa_latest = dssa;
+
     return PARSE_OK;
 
 ERROR:
