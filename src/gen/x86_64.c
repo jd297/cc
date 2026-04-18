@@ -30,7 +30,7 @@
 static const char *codegen_x86_64_suffix(IRPrimitiveDataType ptype);
 static const char *codegen_x86_64_reg_name(IRPrimitiveDataType ptype, IRSSAEnt *reg);
 static int codegen_x86_64_fput_operand(FILE *output, IRPrimitiveDataType ptype, IRSSAEnt *operand);
-static IRSSAEnt *codegen_x86_64_param_register(size_t n, IRDataType *dtype);
+static IRSSAEnt *codegen_x86_64_param_register(size_t n, const IRDataType *dtype);
 
 static void codegen_x86_64_mov(FILE *output, IRPrimitiveDataType ptype, IRSSAEnt *src, IRSSAEnt *dst);
 static void codegen_x86_64_bin_op(FILE *output, IRCode *code, const char *op);
@@ -317,7 +317,7 @@ static int codegen_x86_64_fput_operand(FILE *output, IRPrimitiveDataType ptype, 
 	}
 }
 
-static IRSSAEnt *codegen_x86_64_param_register(size_t n, IRDataType *dtype)
+static IRSSAEnt *codegen_x86_64_param_register(size_t n, const IRDataType *dtype)
 {
 	size_t reg_num;
 

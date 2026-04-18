@@ -163,7 +163,7 @@ IRSSAEnt *ir_ssa_latest(void)
 	return ir_ctx->ssa_latest;
 }
 
-IRSSAEnt *ir_ssa_default(IRDataType *dtype)
+IRSSAEnt *ir_ssa_default(const IRDataType *dtype)
 {
 	IRSSAEnt *ssa = calloc(1, sizeof(IRSSAEnt));
 
@@ -236,7 +236,7 @@ IRSSAEnt *ir_ssa_from_addr(size_t *addr)
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_literal(IRLiteral literal, IRDataType *dtype)
+IRSSAEnt *ir_ssa_from_literal(IRLiteral literal, const IRDataType *dtype)
 {
 	IRSSAEnt *ssa = calloc(1, sizeof(IRSSAEnt));
 
@@ -249,7 +249,7 @@ IRSSAEnt *ir_ssa_from_literal(IRLiteral literal, IRDataType *dtype)
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_reg(size_t reg, IRDataType *dtype)
+IRSSAEnt *ir_ssa_from_reg(size_t reg, const IRDataType *dtype)
 {
 	IRSSAEnt *ssa = calloc(1, sizeof(IRSSAEnt));
 
@@ -274,7 +274,7 @@ IRSSAEnt *ir_ssa_from_ssa(IRSSAEnt *ssa)
 	return ent;
 }
 
-void ir_emit(IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, IRSSAEnt *arg2)
+void ir_emit(IROpCode op, const IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, IRSSAEnt *arg2)
 {
 	IRCode *code;
 
@@ -338,9 +338,11 @@ void ir_emit(IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, I
 	}
 }
 
-extern IRDataType *ir_arithmetic_dtype(IRDataType *lhs, IRDataType *rhs)
+extern const IRDataType *ir_arithmetic_dtype(const IRDataType *lhs, const IRDataType *rhs)
 {
 	/* TODO JUST TO MAKE IT WORK*/
+	(void)rhs;
+
 	return lhs;
 }
 
@@ -472,9 +474,9 @@ static void ir_print_qualifier_flags(int qualifier_flags)
 	printf("}");
 }
 
-static void ir_dtype_print_as(IRDataType *dtype);
+static void ir_dtype_print_as(const IRDataType *dtype);
 
-static void ir_dump_dtype(IRDataType *dtype)
+static void ir_dump_dtype(const IRDataType *dtype)
 {
 	printf("{ TYPE | %s }", ir_dtype_type_to_str(dtype->type));
 	printf("|");
@@ -487,7 +489,7 @@ static void ir_dump_dtype(IRDataType *dtype)
 	printf(" }");
 }
 
-static void ir_dtype_print_as(IRDataType *dtype)
+static void ir_dtype_print_as(const IRDataType *dtype)
 {
 	switch (dtype->type) {
 		case IR_TYPE_PRIMITIVE: {

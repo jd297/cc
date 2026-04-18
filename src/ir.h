@@ -210,7 +210,7 @@ typedef enum {
 	
 struct IRSSAEnt {
 	IRArgType type;
-	IRDataType *dtype;
+	const IRDataType *dtype;
 	
 	union {
 		size_t num;
@@ -227,26 +227,26 @@ struct IRSSAEnt {
 
 typedef struct {
 	IROpCode op;
-	IRDataType *dtype;
+	const IRDataType *dtype;
 	IRSSAEnt *arg1;
 	IRSSAEnt *arg2;
 	IRSSAEnt *result;
 } IRCode;
 
 extern IRSSAEnt *ir_ssa_latest(void);
-extern IRSSAEnt *ir_ssa_default(IRDataType *dtype);
+extern IRSSAEnt *ir_ssa_default(const IRDataType *dtype);
 extern IRSSAEnt *ir_ssa_from_view(sv_t *view);
 extern IRSSAEnt *ir_ssa_from_num(size_t num);
 extern IRSSAEnt *ir_ssa_from_str(size_t str);
 extern IRSSAEnt *ir_ssa_from_stack(size_t *stack);
 extern IRSSAEnt *ir_ssa_from_addr(size_t *addr);
-extern IRSSAEnt *ir_ssa_from_literal(IRLiteral literal, IRDataType *dtype);
-extern IRSSAEnt *ir_ssa_from_reg(size_t reg, IRDataType *dtype);
+extern IRSSAEnt *ir_ssa_from_literal(IRLiteral literal, const IRDataType *dtype);
+extern IRSSAEnt *ir_ssa_from_reg(size_t reg, const IRDataType *dtype);
 extern IRSSAEnt *ir_ssa_from_ssa(IRSSAEnt *ssa);
 
-extern void ir_emit(IROpCode op, IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, IRSSAEnt *arg2);
+extern void ir_emit(IROpCode op, const IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *arg1, IRSSAEnt *arg2);
 
-extern IRDataType *ir_arithmetic_dtype(IRDataType *lhs, IRDataType *rhs);
+extern const IRDataType *ir_arithmetic_dtype(const IRDataType *lhs, const IRDataType *rhs);
 
 extern void ir_dump(void);
 
