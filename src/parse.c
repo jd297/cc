@@ -1950,44 +1950,60 @@ ERROR:
 
 static ParseReturn parse_selection_statement(void)
 {
-	Tok tok;
-    char *lex_pos_saved;
+	char *lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
     switch (yylex()) {
-        case T_IF:
+        case T_IF: {
+        	const size_t before_label_select_begin = ir_ctx->label_select_begin;
+			const size_t before_label_select_end = ir_ctx->label_select_end;
+
+			ir_ctx->label_select_begin = ir_ctx->label_tmp++;
+			ir_ctx->label_select_end = ir_ctx->label_tmp++;
+			
+			if (yylex() != '(') {
+				goto ERROR;
+			}
+
+			parse_required(parse_expression, ERROR);
+
+			if (yylex() != ')') {
+				goto ERROR;
+			}
+
+			/* TODO SEMANTICAL CHECK ON ir_ssa_latest()->dtype MUST BE ARITHMETIC OR POINTER TYPE */
+			ir_emit(IR_OC_JMP_ZERO, ir_ssa_latest()->dtype, ir_ssa_from_num(ir_ctx->label_select_begin), ir_ssa_latest(), NULL);
+
+    		parse_required(parse_statement, ERROR);
+
+    		/* JMP END */
+			ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(ir_ctx->label_select_end), NULL, NULL);
+
+    		/* LABEL ELSE */
+			ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(ir_ctx->label_select_begin), NULL, NULL);
+
+			if (yylex() == T_ELSE) {
+				parse_required(parse_statement, ERROR);
+				
+				ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(ir_ctx->label_select_end), NULL, NULL);
+			} else {
+				lex_setpos(yytext);
+			}
+
+			/* LABEL END */
+			ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(ir_ctx->label_select_end), NULL, NULL);
+
+			ir_ctx->label_select_begin = before_label_select_begin;
+			ir_ctx->label_select_end = before_label_select_end;
+        } break;
         case T_SWITCH: {
-            tok = lex_tok;
+            assert(0 && "TODO not implemented with: T_SWITCH");
         } break;
         default: goto ERROR;
     }
 
-    if (yylex() != '(') {
-        goto ERROR;
-    }
-
-    parse_required(parse_expression, ERROR);
-    
-    if (yylex() != ')') {
-        goto ERROR;
-    }
-
-    parse_required(parse_statement, ERROR);
-
-    if (tok.type == T_SWITCH) {
-        goto OK;
-    }
-
-    if (yylex() != T_ELSE) {
-        lex_setpos(yytext);
-    
-        goto OK;
-    }
-
-    parse_required(parse_statement, ERROR);
-
-OK:
+/* OK: */
     return PARSE_OK;
 
 ERROR:
