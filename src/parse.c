@@ -870,16 +870,18 @@ ERROR:
 
 static ParseReturn parse_inclusive_or_expression(void)
 {
+	IROpCode op;
+	IRSSAEnt *lhs;
     char *lex_pos_saved;
     
     lex_pos_saved = lex_tell();
 
     parse_required(parse_exclusive_or_expression, ERROR);
 
+	lhs = ir_ssa_latest();
+
     switch (yylex()) {
-        case '|': {
-            parse_required(parse_exclusive_or_expression, ERROR);
-        } break;
+        case '|': op = IR_OC_OR; break;
         default: {
             lex_setpos(yytext);
 
@@ -887,17 +889,25 @@ static ParseReturn parse_inclusive_or_expression(void)
         }
     }
 
+	parse_required(parse_exclusive_or_expression, ERROR);
+
+    ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
+
     while (1) {
+		lhs = ir_ssa_latest();
+		
        switch (yylex()) {
-            case '|': {
-                parse_required(parse_exclusive_or_expression, ERROR);
-            } break;
+            case '|': op = IR_OC_OR; break;
             default: {
                 lex_setpos(yytext);
 
                 goto OK;
             }
         }
+        
+        parse_required(parse_exclusive_or_expression, ERROR);
+
+    	ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
     }
 
 OK:
@@ -911,16 +921,18 @@ ERROR:
 
 static ParseReturn parse_exclusive_or_expression(void)
 {
+	IROpCode op;
+	IRSSAEnt *lhs;
     char *lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
     parse_required(parse_and_expression, ERROR);
 
+	lhs = ir_ssa_latest();
+
     switch (yylex()) {
-        case T_BITWISE_XOR: {
-            parse_required(parse_and_expression, ERROR);
-        } break;
+        case '^': op = IR_OC_XOR; break;
         default: {
             lex_setpos(yytext);
 
@@ -928,17 +940,25 @@ static ParseReturn parse_exclusive_or_expression(void)
         }
     }
 
+	parse_required(parse_and_expression, ERROR);
+
+	ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
+
     while (1) {
+    	lhs = ir_ssa_latest();
+
        switch (yylex()) {
-            case T_BITWISE_XOR: {
-                parse_required(parse_and_expression, ERROR);
-            } break;
+            case '^': op = IR_OC_XOR; break;
             default: {
                 lex_setpos(yytext);
 
                 goto OK;
             }
         }
+
+        parse_required(parse_and_expression, ERROR);
+
+		ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
     }
 
 OK:
@@ -952,16 +972,18 @@ ERROR:
 
 static ParseReturn parse_and_expression(void)
 {
+	IROpCode op;
+	IRSSAEnt *lhs;
     char *lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
     parse_required(parse_equality_expression, ERROR);
 
+	lhs = ir_ssa_latest();
+
 	switch (yylex()) {
-        case T_BITWISE_AND: {
-            parse_required(parse_equality_expression, ERROR);
-        } break;
+        case '&': op = IR_OC_AND; break;
         default: {
             lex_setpos(yytext);
 
@@ -969,17 +991,25 @@ static ParseReturn parse_and_expression(void)
         }
     }
 
+	parse_required(parse_equality_expression, ERROR);
+
+    ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
+
     while (1) {
+    	lhs = ir_ssa_latest();
+
        switch (yylex()) {
-            case T_BITWISE_AND: {
-                parse_required(parse_equality_expression, ERROR);
-            } break;
+            case '&': op = IR_OC_AND; break;
             default: {
                 lex_setpos(yytext);
 
                 goto OK;
             }
         }
+
+        parse_required(parse_equality_expression, ERROR);
+        
+        ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
     }
 
 OK:
@@ -993,17 +1023,22 @@ ERROR:
 
 static ParseReturn parse_equality_expression(void)
 {
+	IROpCode op;
+	IRSSAEnt *lhs;
     char *lex_pos_saved;
+    const IRDataType *equality_dtype = ir_dtype_from_primitive(
+    	codegen_get_primitive_data_type(IR_GENERIC_INT),
+    	IR_QUALIFIER_FLAG_NONE, IR_STORAGE_FLAG_NONE);
 
     lex_pos_saved = lex_tell();
     
     parse_required(parse_relational_expression, ERROR);
 
+	lhs = ir_ssa_latest();
+
     switch (yylex()) {
-        case T_EQUAL_TO:
-        case T_NOT_EQUAL_TO: {
-            parse_required(parse_relational_expression, ERROR);
-        } break;
+        case T_EQUAL_TO: op = IR_OC_EQ; break;
+        case T_NOT_EQUAL_TO: op = IR_OC_NEQ; break;
         default: {
             lex_setpos(yytext);
 
@@ -1011,18 +1046,26 @@ static ParseReturn parse_equality_expression(void)
         }
     }
 
+	parse_required(parse_relational_expression, ERROR);
+
+	ir_emit(op, equality_dtype, NULL, lhs, ir_ssa_latest());
+
     while (1) {
+    	lhs = ir_ssa_latest();
+
         switch (yylex()) {
-            case T_EQUAL_TO:
-            case T_NOT_EQUAL_TO: {
-                parse_required(parse_relational_expression, ERROR);
-            } break;
+            case T_EQUAL_TO: op = IR_OC_EQ; break;
+        	case T_NOT_EQUAL_TO: op = IR_OC_NEQ; break;
             default: {
                 lex_setpos(yytext);
 
                 goto OK;
             }
         }
+        
+        parse_required(parse_relational_expression, ERROR);
+
+		ir_emit(op, equality_dtype, NULL, lhs, ir_ssa_latest());
     }
 
 OK:
@@ -1036,19 +1079,24 @@ ERROR:
 
 static ParseReturn parse_relational_expression(void)
 {
+	IROpCode op;
+	IRSSAEnt *lhs;
     char *lex_pos_saved;
+    const IRDataType *relational_dtype = ir_dtype_from_primitive(
+    	codegen_get_primitive_data_type(IR_GENERIC_INT),
+    	IR_QUALIFIER_FLAG_NONE, IR_STORAGE_FLAG_NONE);
 
     lex_pos_saved = lex_tell();
 
     parse_required(parse_shift_expression, ERROR);
 
+	lhs = ir_ssa_latest();
+
 	switch (yylex()) {
-        case T_LESS_THAN:
-        case T_GREATER_THAN:
-        case T_LESS_THAN_OR_EQUAL_TO:
-        case T_GREATER_THAN_OR_EQUAL_TO: {
-            parse_required(parse_shift_expression, ERROR);
-        } break;
+        case T_LESS_THAN: op = IR_OC_LT; break;
+        case T_GREATER_THAN: op = IR_OC_GT; break;
+        case T_LESS_THAN_OR_EQUAL_TO: op = IR_OC_LTE; break;
+        case T_GREATER_THAN_OR_EQUAL_TO: op = IR_OC_GTE; break;
         default: {
             lex_setpos(yytext);
 
@@ -1056,20 +1104,28 @@ static ParseReturn parse_relational_expression(void)
         }
     }
 
+	parse_required(parse_shift_expression, ERROR);
+
+	ir_emit(op, relational_dtype, NULL, lhs, ir_ssa_latest());
+
     while (1) {
+    	lhs = ir_ssa_latest();
+
        switch (yylex()) {
-            case T_LESS_THAN:
-            case T_GREATER_THAN:
-            case T_LESS_THAN_OR_EQUAL_TO:
-            case T_GREATER_THAN_OR_EQUAL_TO: {
-                parse_required(parse_shift_expression, ERROR);
-            } break;
+            case T_LESS_THAN: op = IR_OC_LT; break;
+		    case T_GREATER_THAN: op = IR_OC_GT; break;
+		    case T_LESS_THAN_OR_EQUAL_TO: op = IR_OC_LTE; break;
+		    case T_GREATER_THAN_OR_EQUAL_TO: op = IR_OC_GTE; break;
             default: {
                 lex_setpos(yytext);
 
                 goto OK;
             }
         }
+        
+        parse_required(parse_shift_expression, ERROR);
+
+		ir_emit(op, relational_dtype, NULL, lhs, ir_ssa_latest());
     }
 
 OK:
@@ -1083,17 +1139,19 @@ ERROR:
 
 static ParseReturn parse_shift_expression(void)
 {
+	IROpCode op;
+	IRSSAEnt *lhs;
     char *lex_pos_saved;
 
     lex_pos_saved = lex_tell();
     
     parse_required(parse_additive_expression, ERROR);
 
+	lhs = ir_ssa_latest();
+
     switch (yylex()) {
-        case T_BITWISE_LEFTSHIFT:
-        case T_BITWISE_RIGHTSHIFT: {
-            parse_required(parse_additive_expression, ERROR);
-        } break;
+        case T_BITWISE_LEFTSHIFT: op = IR_OC_SAL; break;
+        case T_BITWISE_RIGHTSHIFT: op = IR_OC_SAR; break;
         default: {
             lex_setpos(yytext);
 
@@ -1101,18 +1159,26 @@ static ParseReturn parse_shift_expression(void)
         }
     }
 
+	parse_required(parse_additive_expression, ERROR);
+
+	ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
+
     while (1) {
+    	lhs = ir_ssa_latest();
+
        switch (yylex()) {
-            case T_BITWISE_LEFTSHIFT:
-            case T_BITWISE_RIGHTSHIFT: {
-                parse_required(parse_additive_expression, ERROR);
-            } break;
+            case T_BITWISE_LEFTSHIFT: op = IR_OC_SAL; break;
+        	case T_BITWISE_RIGHTSHIFT: op = IR_OC_SAR; break;
             default: {
                 lex_setpos(yytext);
 
                 goto OK;
             }
         }
+        
+        parse_required(parse_additive_expression, ERROR);
+
+		ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
     }
 
 OK:
