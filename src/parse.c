@@ -880,22 +880,7 @@ static ParseReturn parse_inclusive_or_expression(void)
 
     parse_required(parse_exclusive_or_expression, ERROR);
 
-	lhs = ir_ssa_latest();
-
-    switch (yylex()) {
-        case '|': op = IR_OC_OR; break;
-        default: {
-            lex_setpos(yytext);
-
-            goto OK;
-        }
-    }
-
-	parse_required(parse_exclusive_or_expression, ERROR);
-
-    ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
-
-    while (1) {
+	while (1) {
 		lhs = ir_ssa_latest();
 		
        switch (yylex()) {
@@ -931,22 +916,7 @@ static ParseReturn parse_exclusive_or_expression(void)
 
     parse_required(parse_and_expression, ERROR);
 
-	lhs = ir_ssa_latest();
-
-    switch (yylex()) {
-        case '^': op = IR_OC_XOR; break;
-        default: {
-            lex_setpos(yytext);
-
-            goto OK;
-        }
-    }
-
-	parse_required(parse_and_expression, ERROR);
-
-	ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
-
-    while (1) {
+	while (1) {
     	lhs = ir_ssa_latest();
 
        switch (yylex()) {
@@ -982,22 +952,7 @@ static ParseReturn parse_and_expression(void)
 
     parse_required(parse_equality_expression, ERROR);
 
-	lhs = ir_ssa_latest();
-
-	switch (yylex()) {
-        case '&': op = IR_OC_AND; break;
-        default: {
-            lex_setpos(yytext);
-
-            goto OK;
-        }
-    }
-
-	parse_required(parse_equality_expression, ERROR);
-
-    ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
-
-    while (1) {
+	while (1) {
     	lhs = ir_ssa_latest();
 
        switch (yylex()) {
@@ -1036,23 +991,7 @@ static ParseReturn parse_equality_expression(void)
     
     parse_required(parse_relational_expression, ERROR);
 
-	lhs = ir_ssa_latest();
-
-    switch (yylex()) {
-        case T_EQUAL_TO: op = IR_OC_EQ; break;
-        case T_NOT_EQUAL_TO: op = IR_OC_NEQ; break;
-        default: {
-            lex_setpos(yytext);
-
-            goto OK;
-        }
-    }
-
-	parse_required(parse_relational_expression, ERROR);
-
-	ir_emit(op, equality_dtype, NULL, lhs, ir_ssa_latest());
-
-    while (1) {
+	while (1) {
     	lhs = ir_ssa_latest();
 
         switch (yylex()) {
@@ -1092,25 +1031,7 @@ static ParseReturn parse_relational_expression(void)
 
     parse_required(parse_shift_expression, ERROR);
 
-	lhs = ir_ssa_latest();
-
-	switch (yylex()) {
-        case T_LESS_THAN: op = IR_OC_LT; break;
-        case T_GREATER_THAN: op = IR_OC_GT; break;
-        case T_LESS_THAN_OR_EQUAL_TO: op = IR_OC_LTE; break;
-        case T_GREATER_THAN_OR_EQUAL_TO: op = IR_OC_GTE; break;
-        default: {
-            lex_setpos(yytext);
-
-            goto OK;
-        }
-    }
-
-	parse_required(parse_shift_expression, ERROR);
-
-	ir_emit(op, relational_dtype, NULL, lhs, ir_ssa_latest());
-
-    while (1) {
+	while (1) {
     	lhs = ir_ssa_latest();
 
        switch (yylex()) {
@@ -1149,23 +1070,7 @@ static ParseReturn parse_shift_expression(void)
     
     parse_required(parse_additive_expression, ERROR);
 
-	lhs = ir_ssa_latest();
-
-    switch (yylex()) {
-        case T_BITWISE_LEFTSHIFT: op = IR_OC_SAL; break;
-        case T_BITWISE_RIGHTSHIFT: op = IR_OC_SAR; break;
-        default: {
-            lex_setpos(yytext);
-
-            goto OK;
-        }
-    }
-
-	parse_required(parse_additive_expression, ERROR);
-
-	ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
-
-    while (1) {
+	while (1) {
     	lhs = ir_ssa_latest();
 
        switch (yylex()) {
@@ -1202,22 +1107,6 @@ static ParseReturn parse_additive_expression(void)
     
     parse_required(parse_multiplicative_expression, ERROR);
     
-    lhs = ir_ssa_latest();
-
-   	switch (yylex()) {
-        case T_PLUS: op = IR_OC_ADD; break;
-        case T_MINUS: op = IR_OC_SUB; break;
-        default: {
-            lex_setpos(yytext);
-
-            goto OK;
-        }
-    }
-    
-    parse_required(parse_multiplicative_expression, ERROR);
-    
-    ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
-
     while (1) {
 		lhs = ir_ssa_latest();
     	
@@ -1255,24 +1144,7 @@ static ParseReturn parse_multiplicative_expression(void)
     
     parse_required(parse_cast_expression, ERROR);
 
-	lhs = ir_ssa_latest();
-
-   	switch (yylex()) {
-        case '*': op = IR_OC_MUL; break;
-        case '/': op = IR_OC_DIV; break;
-        case '%':  op = IR_OC_MOD; break;
-        default: {
-            lex_setpos(yytext);
-
-            goto OK;
-        }
-    }
-    
-    parse_required(parse_cast_expression, ERROR);
-
-	ir_emit(op, NULL, NULL, lhs, ir_ssa_latest());
-
-    while (1) {
+	while (1) {
     	lhs = ir_ssa_latest();
 
        switch (yylex()) {
