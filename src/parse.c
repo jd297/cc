@@ -732,6 +732,31 @@ ERROR:
     return PARSE_ERROR;
 }
 
+static ParseReturn parse_expression(void)
+{
+    char *lex_pos_saved;
+
+    lex_pos_saved = lex_tell();
+
+	while (1) {
+		parse_required(parse_assignment_expression, ERROR);
+
+		if (yylex() != ',') {
+		    lex_setpos(yytext);
+
+		    goto OK;
+		}
+	}
+
+OK:
+    return PARSE_OK;
+
+ERROR:
+    lex_setpos(lex_pos_saved);
+
+    return PARSE_ERROR;
+}
+
 static ParseReturn parse_conditional_expression(void)
 {
     char *lex_pos_saved;
@@ -796,29 +821,6 @@ static ParseReturn parse_logical_or_expression(void)
     }
 
 OK:
-    return PARSE_OK;
-
-ERROR:
-    lex_setpos(lex_pos_saved);
-
-    return PARSE_ERROR;
-}
-
-static ParseReturn parse_expression(void)
-{
-    char *lex_pos_saved;
-
-    lex_pos_saved = lex_tell();
-    
-NEXT_ASSIGNMENT_EXPRESSION:
-    parse_required(parse_assignment_expression, ERROR);
-
-    if (yylex() == ',') {
-        goto NEXT_ASSIGNMENT_EXPRESSION;
-    }
-
-    lex_setpos(yytext);
-
     return PARSE_OK;
 
 ERROR:
