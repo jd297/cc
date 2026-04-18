@@ -27,25 +27,26 @@ typedef struct {
 	SymtblEntryClass eclass;
 	Symtbl *scope_self;
 
+	enum {
+		SYM_STATE_DECLARATION,
+		SYM_STATE_DEFINITION
+	} state;
+
 	union {
-		enum {
-			SYM_STATE_DECLARATION,
-			SYM_STATE_DEFINITION
-		} state;
-		union {
+		struct {
 			Symtbl *scope;
 			size_t argc;
 		} function;
-		union {
+		struct {
 			Symtbl *scope;
 		} union_struct;
-		union {
+		struct {
 			int val;
 		} enum_constant;
-		union {
+		struct {
 			size_t addr;
 		} object;
-		union {
+		struct {
 			size_t id;
 		} label;
 	} as;
@@ -85,7 +86,7 @@ extern SymtblEntry *symtbl_add_entry(Symtbl *symtbl, sv_t id, IRDataType *dtype,
 #define symtbl_add_function_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_FUNCTION);
 #define symtbl_add_typedef_name_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_TYPEDEF_NAME);
 #define symtbl_add_enum_constant_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_ENUM_CONSTANT);
-#define symtbl_add_label_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_LABEL);
+#define symtbl_add_label_entry(symtbl, id) symtbl_add_entry((symtbl), (id), NULL, SYM_CLASS_LABEL);
 #define symtbl_add_tag_of_struct_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_TAG_OF_STRUCT);
 #define symtbl_add_union_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype), SYM_CLASS_UNION);
 #define symtbl_add_enumeration_entry(symtbl, id, dtype) symtbl_add_entry((symtbl), (id), (dtype),SYM_CLASS_ENUMERATION);
