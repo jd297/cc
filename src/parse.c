@@ -84,6 +84,8 @@ static ParseReturn parse_function_definition(void)
 
 	ir_emit(IR_OC_FUNC_END, NULL, NULL, NULL, NULL);
 
+	/* TODO check all elements in namespace2 (LABEL) have flag is_labeled == 1 */
+
     return PARSE_OK;
 
 ERROR:
@@ -1824,27 +1826,49 @@ static ParseReturn parse_labeled_statement(void)
 
     switch (yylex()) {
     	case T_IDENTIFIER: {
-    		
+    		SymtblEntry *label_entry;
+
+    		if (yylex() != ':') {
+				goto ERROR;
+			}
+			
+			label_entry = symtbl_get_label_entry(parse_function_entry->as.function.scope, &lex_tok.literal.sv);
+		
+			if (label_entry == NULL) {
+				label_entry = symtbl_add_label_entry(parse_function_entry->as.function.scope, lex_tok.literal.sv);
+				
+				assert(label_entry != NULL);
+				
+				label_entry->state = SYM_STATE_DEFINITION;
+				label_entry->as.label.id = ir_ctx->label_tmp++;
+			} else if (label_entry->state == SYM_STATE_DEFINITION) {
+				assert(0 && "TODO error: redefiniton of label \'...\'");
+			} else {
+				label_entry->state = SYM_STATE_DEFINITION;
+			}
+
+			ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(label_entry->as.label.id), NULL, NULL);
+
+			parse_required(parse_statement, ERROR);
 		} break;
 		case T_DEFAULT: {
+			if (yylex() != ':') {
+				goto ERROR;
+			}
 			
+			parse_required(parse_statement, ERROR);
 		} break;
 		case T_CASE: {
 		    parse_required(parse_constant_expression, ERROR);
+		    
+		    if (yylex() != ':') {
+				goto ERROR;
+			}
+			
+			parse_required(parse_statement, ERROR);
 		} break;
 		default: goto ERROR;
 	}
-
-    if (yylex() != ':') {
-        goto ERROR;
-    }
-
-	if (lex_tok.type == T_IDENTIFIER) {
-		/* TODO SEMANTICAL CHECK with symtbl_get_label_entry */
-		symtbl_add_label_entry(parse_scope_function, lex_tok.literal.sv, NULL);
-	}
-
-    parse_required(parse_statement, ERROR);
 
     return PARSE_OK;
 
@@ -2013,7 +2037,25 @@ static ParseReturn parse_jump_statement(void)
 
     switch(yylex()) {
         case T_GOTO: {
-            parse_required(parse_identifier, ERROR);
+			SymtblEntry *label_entry;
+
+            if (yylex() != T_IDENTIFIER) {
+            	goto ERROR;
+            }
+			
+			label_entry = symtbl_get_label_entry(parse_function_entry->as.function.scope, &lex_tok.literal.sv);
+		
+			if (label_entry == NULL) {
+				label_entry = symtbl_add_label_entry(parse_function_entry->as.function.scope, lex_tok.literal.sv);
+				
+				assert(label_entry != NULL);
+				
+				label_entry->as.label.id = ir_ctx->label_tmp++;
+				label_entry->state = SYM_STATE_DECLARATION;
+			}
+
+			ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(label_entry->as.label.id), NULL, NULL);
+
         } break;
         case T_RETURN: {
         	if (parse_expression() == PARSE_OK) {
