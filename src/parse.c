@@ -1932,14 +1932,13 @@ static ParseReturn parse_expression_statement(void)
 
 	lex_pos_saved = lex_tell();
 
-    parse_opt(parse_expression, next);
+    (void)parse_expression(); /* OPTIONAL */
 
-    next: {
-        if (yylex() != ';') {
-            goto ERROR;
-        }
+    if (yylex() != ';') {
+        goto ERROR;
     }
 
+/* OK: */
     return PARSE_OK;
 
 ERROR:
