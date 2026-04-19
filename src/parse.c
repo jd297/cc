@@ -2014,25 +2014,44 @@ ERROR:
 
 static ParseReturn parse_iteration_statement(void)
 {
+	const size_t before_label_iter_begin = ir_ctx->label_iter_begin;
+	const size_t before_label_iter_end = ir_ctx->label_iter_end;
+	const size_t label_tmp_saved = ir_ctx->label_tmp;
 	char *lex_pos_saved;
+
+	ir_ctx->label_iter_begin = ir_ctx->label_tmp++;
+	ir_ctx->label_iter_end = ir_ctx->label_tmp++;
 
 	lex_pos_saved = lex_tell();
 
     switch(yylex()) {
         case T_WHILE: {
-            if (yylex() != '(') {
+        	if (yylex() != '(') {
                 goto ERROR;
             }
+            
+            /* LABEL BEGIN */
+			ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(ir_ctx->label_iter_begin), NULL, NULL);
 
+			/* TODO SEMANTICAL CHECK ON ir_ssa_latest()->dtype MUST BE ARITHMETIC OR POINTER TYPE */
             parse_required(parse_expression, ERROR);
+
+			/* JMP END */
+			ir_emit(IR_OC_JMP_ZERO, ir_ssa_latest()->dtype, ir_ssa_from_num(ir_ctx->label_iter_end), ir_ssa_latest(), NULL);
 
             if (yylex() != ')') {
                 goto ERROR;
             }
 
             parse_required(parse_statement, ERROR);
+
+			/* JMP BEGIN */
+            ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(ir_ctx->label_iter_begin), NULL, NULL);
         } break;
         case T_DO: {
+        	/* LABEL BEGIN */
+			ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(ir_ctx->label_iter_begin), NULL, NULL);
+
             parse_required(parse_statement, ERROR);
 
             if (yylex() != T_WHILE) {
@@ -2043,7 +2062,11 @@ static ParseReturn parse_iteration_statement(void)
                 goto ERROR;
             }
 
+			/* TODO SEMANTICAL CHECK ON ir_ssa_latest()->dtype MUST BE ARITHMETIC OR POINTER TYPE */
             parse_required(parse_expression, ERROR);
+
+			/* JMP BEGIN */
+			ir_emit(IR_OC_JMP_NOT_ZERO, ir_ssa_latest()->dtype, ir_ssa_from_num(ir_ctx->label_iter_begin), ir_ssa_latest(), NULL);
 
             if (yylex() != ')') {
                 goto ERROR;
@@ -2054,41 +2077,77 @@ static ParseReturn parse_iteration_statement(void)
             }
         } break;
         case T_FOR: {
+        	/* NOTE:
+        	"FOR NOW" (haha) I keep it simple and generate the IR in order. With
+        	this approach I have unnecessarily more labels and jmps. But you could
+        	argue that an optimizer will fix the order anyway.
+        	*/
+        	const size_t for_label_begin = ir_ctx->label_tmp++;
+        	const size_t for_label_stmt = ir_ctx->label_tmp++;
+
             if (yylex() != '(') {
                 goto ERROR;
             }
 
-            parse_required(parse_expression, NEXT_EXPRESSION_INIT);
+            (void)parse_expression();
 
-
-NEXT_EXPRESSION_INIT:
             if (yylex() != ';') {
                 goto ERROR;
             }
 
-            parse_required(parse_expression, NEXT_EXPRESSION_CONDITION);
+			/* LABEL FOR BEGIN */
+			ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(for_label_begin), NULL, NULL);
 
-NEXT_EXPRESSION_CONDITION:
+			if (parse_expression() == PARSE_OK) {
+				/* TODO SEMANTICAL CHECK ON ir_ssa_latest()->dtype MUST BE ARITHMETIC OR POINTER TYPE */
+				ir_emit(IR_OC_JMP_ZERO, ir_ssa_latest()->dtype, ir_ssa_from_num(ir_ctx->label_iter_end), ir_ssa_latest(), NULL);
+			}
+
+			/* JMP STMT */
+			ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(for_label_stmt), NULL, NULL);
+
             if (yylex() != ';') {
                 goto ERROR;
             }
 
-            parse_required(parse_expression, NEXT_EXPRESSION_POST);
+			/* LABEL EXPR_LAST */
+			ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(ir_ctx->label_iter_begin), NULL, NULL);
 
-NEXT_EXPRESSION_POST:
+            (void)parse_expression();
+
+            /* JMP FOR BEGIN */
+            ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(for_label_begin), NULL, NULL);
+
             if (yylex() != ')') {
                 goto ERROR;
             }
 
+			/* LABEL STMT */
+			ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(for_label_stmt), NULL, NULL);
+
             parse_required(parse_statement, ERROR);
+
+            /* JMP EXPR_LAST */
+			ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(ir_ctx->label_iter_begin), NULL, NULL);
         } break;
         default: goto ERROR;
     }
+
+/* OK: */
+	/* LABEL END */
+	ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(ir_ctx->label_iter_end), NULL, NULL);
+	
+	ir_ctx->label_iter_begin = before_label_iter_begin;
+	ir_ctx->label_iter_end = before_label_iter_end;
 
     return PARSE_OK;
 
 ERROR:
     lex_setpos(lex_pos_saved);
+
+	ir_ctx->label_iter_begin = before_label_iter_begin;
+	ir_ctx->label_iter_end = before_label_iter_end;
+	ir_ctx->label_tmp = label_tmp_saved;
 
     return PARSE_ERROR;
 }
