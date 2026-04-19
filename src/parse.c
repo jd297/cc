@@ -2187,10 +2187,12 @@ static ParseReturn parse_jump_statement(void)
 
 			ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(ir_ctx->label_func_end), NULL, NULL);
         } break;
-        case T_CONTINUE:
-        case T_BREAK: {
-        	
-    	} break;
+        case T_CONTINUE: {
+			ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(ir_ctx->label_iter_begin), NULL, NULL);
+		} break;
+		case T_BREAK: {
+			ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(ir_ctx->label_iter_end), NULL, NULL);
+		} break;
         default: goto ERROR;
     }
 
