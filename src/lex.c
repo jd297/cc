@@ -47,30 +47,44 @@ static int lex_match(char c)
 	return 0;
 }
 
-extern char *lex_tell(void)
+extern LexPos lex_tell(void)
 {
-	return lex_current_p;
+	LexPos pos;
+
+	pos.lineno = lex_lineno;
+	pos.current = lex_current_p;
+	pos.line_begin = lex_line_begin_p;
+
+	return pos;
 }
 
-extern void lex_setpos(char *pos)
+extern void lex_setpos(LexPos pos)
 {
-	/* TODO if (pos == yytext) {
+	/* TODO if (pos.current == yytext) {
 		lex_cache = 1;
 	}
 	*/
 
-	lex_current_p = pos;
+	lex_current_p = pos.current;
+	lex_line_begin_p = pos.line_begin;
+	lex_lineno = pos.lineno;
 }
 
 Tok lex_tok;
+char *lex_line_begin_p = NULL;
+int lex_lineno = 0;
 
 extern int yylex(void)
 {
-	int tok; /* TODO TokenType_C ?? */
-	/* TODO col feature const char *lex_line_begin_p = lex_current_p; */
+	int tok;
 
 	if (lex_cache) {
 		lex_emit_cache();
+	}
+
+	if (lex_line_begin_p == NULL) { /* TODO NOT WORKING WITH DIFFERENT STATES */
+		lex_line_begin_p = lex_current_p;
+		lex_lineno = 1;
 	}
 
 LEX_AGAIN:
@@ -150,11 +164,8 @@ LEX_AGAIN:
 					}
 					
 					if (lex_peek(0) == '\n') {
-						/*
-						TODO REIMPLEMENT THIS FEATURE
-						++lexer->loc.line;
-						lexer->loc.col = 0;
-						*/
+						lex_line_begin_p = lex_current_p;
+						++lex_lineno;
 
 						lex_current_p++;
 
@@ -454,11 +465,8 @@ L_STRING_LITERAL:
 			lex_emit_literal(tok, T_STRING);
 		}
 		case '\n': {
-			/*
-			TODO REIMPLEMENT THIS FEATURE
-			++lexer->loc.line;
-			lexer->loc.col = 0;
-			*/
+			lex_line_begin_p = lex_current_p;
+			++lex_lineno;
 
 			/*
 			TODO CURRENTLY NO CPP

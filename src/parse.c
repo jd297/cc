@@ -66,7 +66,7 @@ OK:
 
 static ParseReturn parse_function_definition(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
 	parse_decl_state_reset(SYM_CLASS_FUNCTION);
 
@@ -96,7 +96,7 @@ ERROR:
 
 static ParseReturn parse_declaration(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
 	parse_decl_state_reset(SYM_CLASS_OBJECT);
 
@@ -149,7 +149,7 @@ ERROR:
 
 static ParseReturn parse_compound_statement(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
     Symtbl *scope_saved;
 
 	scope_saved = parse_scope_current;
@@ -203,7 +203,7 @@ static ParseReturn parse_storage_class_specifier(void)
             return PARSE_OK;
         }
         default: {
-		    lex_setpos(yytext);
+		    lex_setpos(lex_pos_last);
 
 		    return PARSE_ERROR;
 		}
@@ -212,7 +212,7 @@ static ParseReturn parse_storage_class_specifier(void)
 
 static ParseReturn parse_type_specifier(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -231,7 +231,7 @@ static ParseReturn parse_type_specifier(void)
             return PARSE_OK;
         }
         default: {
-        	lex_setpos(yytext);
+			lex_setpos(lex_pos_last);
         } break;
     }
 
@@ -260,7 +260,7 @@ static ParseReturn parse_type_qualifier(void)
             return PARSE_OK;
         } break;
         default: {
-            lex_setpos(yytext);
+            lex_setpos(lex_pos_last);
 
             return PARSE_ERROR;
         }       
@@ -269,7 +269,7 @@ static ParseReturn parse_type_qualifier(void)
 
 static ParseReturn parse_struct_or_union_specifier(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -289,7 +289,7 @@ static ParseReturn parse_struct_or_union_specifier(void)
 
 HAS_IDENTIFIER:
 	if (yylex() != '{') {
-        lex_setpos(yytext);
+        lex_setpos(lex_pos_last);
 
         goto OK;
     }
@@ -311,7 +311,7 @@ ERROR:
 
 static ParseReturn parse_enum_specifier(void)
 {
-	char *lex_pos_saved;
+	LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -337,7 +337,7 @@ static ParseReturn parse_enum_specifier(void)
 
 HAS_IDENTIFIER:
     if (yylex() != '{') {
-        lex_setpos(yytext);
+        lex_setpos(lex_pos_last);
 
         goto OK;
     }
@@ -360,7 +360,7 @@ ERROR:
 static ParseReturn parse_typedef_name(void)
 {
 	Tok identifier_tok;
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
     SymtblEntry *typedef_name_entry;
 
     lex_pos_saved = lex_tell();
@@ -412,7 +412,7 @@ static ParseReturn parse_struct_or_union(void)
             return PARSE_OK;
         } break;
         default: {
-            lex_setpos(yytext);
+            lex_setpos(lex_pos_last);
 
             return PARSE_ERROR;   
         }
@@ -427,14 +427,14 @@ static ParseReturn parse_identifier(void)
     }
 
 /* ERROR: */
-    lex_setpos(yytext);
+    lex_setpos(lex_pos_last);
 
     return PARSE_ERROR;
 }
 
 static ParseReturn parse_struct_declaration(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -467,7 +467,7 @@ OK:
 
 static ParseReturn parse_struct_declarator_list(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -475,7 +475,7 @@ static ParseReturn parse_struct_declarator_list(void)
 		parse_required(parse_struct_declarator, ERROR);
 
 		if (yylex() != ',') {
-		    lex_setpos(yytext);
+		    lex_setpos(lex_pos_last);
 		    
 		    goto OK;
 		}
@@ -492,7 +492,7 @@ ERROR:
 
 static ParseReturn parse_struct_declarator(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
     
@@ -508,7 +508,7 @@ static ParseReturn parse_struct_declarator(void)
 
 HAS_DECLARATOR:
     if (yylex() != ':') {
-        lex_setpos(yytext);
+        lex_setpos(lex_pos_last);
 
         goto OK;
     }
@@ -536,7 +536,7 @@ ERROR:
 
 static ParseReturn parse_pointer(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
     IRDataType *dtype_saved;
 
 	dtype_saved = ir_dtype_assign(&decl_state.dtype);
@@ -574,7 +574,9 @@ ERROR:
 
 static ParseReturn parse_direct_declarator(void)
 {
-	char *lex_pos_saved = lex_tell();
+	LexPos lex_pos_saved;
+
+	lex_pos_saved = lex_tell();
 
 	if (yylex() == T_IDENTIFIER) {
 		parse_direct_declarator_id = lex_tok.literal.sv;
@@ -658,7 +660,7 @@ NEXT:
 			} break;
 			default: {
 				/* TODO CHECK REDECLARATION */
-				lex_setpos(yytext);
+				lex_setpos(lex_pos_last);
 
 				switch(decl_state.eclass) {
 					case SYM_CLASS_OBJECT: {
@@ -709,7 +711,7 @@ ERROR:
 
 static ParseReturn parse_parameter_type_list(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -722,7 +724,7 @@ static ParseReturn parse_parameter_type_list(void)
         
         assert(0 && "TODO NOT IMPLEMENTED: add ... as IR_TYPE_NONE maybe so argc count grows");
     } else {
-        lex_setpos(yytext);
+        lex_setpos(lex_pos_last);
     }
 
 /* OK: */
@@ -736,7 +738,7 @@ ERROR:
 
 static ParseReturn parse_expression(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -744,7 +746,7 @@ static ParseReturn parse_expression(void)
 		parse_required(parse_assignment_expression, ERROR);
 
 		if (yylex() != ',') {
-		    lex_setpos(yytext);
+		    lex_setpos(lex_pos_last);
 
 		    goto OK;
 		}
@@ -761,14 +763,14 @@ ERROR:
 
 static ParseReturn parse_conditional_expression(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
     parse_required(parse_logical_or_expression, ERROR);
 
     if (yylex() != '?') {
-        lex_setpos(yytext);
+        lex_setpos(lex_pos_last);
 
         goto OK;
     }
@@ -799,7 +801,7 @@ static ParseReturn parse_logical_or_expression(void)
 	size_t logical_label_end;
     size_t logical_label_true;
     int has_operator = 0;
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -820,7 +822,7 @@ static ParseReturn parse_logical_or_expression(void)
 		}
 		
 		if (lex_tok.type != T_LOGICAL_OR) {
-			lex_setpos(yytext);
+			lex_setpos(lex_pos_last);
 
 			goto OK;
 		}
@@ -864,7 +866,7 @@ static ParseReturn parse_logical_and_expression(void)
 	size_t logical_label_end;
     size_t logical_label_false;
     int has_operator = 0;
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -885,7 +887,7 @@ static ParseReturn parse_logical_and_expression(void)
 		}
 		
 		if (lex_tok.type != T_LOGICAL_AND) {
-			lex_setpos(yytext);
+			lex_setpos(lex_pos_last);
 
 			goto OK;
 		}
@@ -924,7 +926,7 @@ static ParseReturn parse_inclusive_or_expression(void)
 {
 	IROpCode op;
 	IRSSAEnt *lhs;
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
     
     lex_pos_saved = lex_tell();
 
@@ -936,7 +938,7 @@ static ParseReturn parse_inclusive_or_expression(void)
        switch (yylex()) {
             case '|': op = IR_OC_OR; break;
             default: {
-                lex_setpos(yytext);
+                lex_setpos(lex_pos_last);
 
                 goto OK;
             }
@@ -960,7 +962,7 @@ static ParseReturn parse_exclusive_or_expression(void)
 {
 	IROpCode op;
 	IRSSAEnt *lhs;
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -972,7 +974,7 @@ static ParseReturn parse_exclusive_or_expression(void)
        switch (yylex()) {
             case '^': op = IR_OC_XOR; break;
             default: {
-                lex_setpos(yytext);
+                lex_setpos(lex_pos_last);
 
                 goto OK;
             }
@@ -996,7 +998,7 @@ static ParseReturn parse_and_expression(void)
 {
 	IROpCode op;
 	IRSSAEnt *lhs;
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -1008,7 +1010,7 @@ static ParseReturn parse_and_expression(void)
        switch (yylex()) {
             case '&': op = IR_OC_AND; break;
             default: {
-                lex_setpos(yytext);
+                lex_setpos(lex_pos_last);
 
                 goto OK;
             }
@@ -1032,7 +1034,7 @@ static ParseReturn parse_equality_expression(void)
 {
 	IROpCode op;
 	IRSSAEnt *lhs;
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
     const IRDataType *equality_dtype = ir_dtype_from_primitive(
     	codegen_get_primitive_data_type(IR_GENERIC_INT),
     	IR_QUALIFIER_FLAG_NONE, IR_STORAGE_FLAG_NONE);
@@ -1048,7 +1050,7 @@ static ParseReturn parse_equality_expression(void)
             case T_EQUAL_TO: op = IR_OC_EQ; break;
         	case T_NOT_EQUAL_TO: op = IR_OC_NEQ; break;
             default: {
-                lex_setpos(yytext);
+                lex_setpos(lex_pos_last);
 
                 goto OK;
             }
@@ -1072,7 +1074,7 @@ static ParseReturn parse_relational_expression(void)
 {
 	IROpCode op;
 	IRSSAEnt *lhs;
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
     const IRDataType *relational_dtype = ir_dtype_from_primitive(
     	codegen_get_primitive_data_type(IR_GENERIC_INT),
     	IR_QUALIFIER_FLAG_NONE, IR_STORAGE_FLAG_NONE);
@@ -1090,7 +1092,7 @@ static ParseReturn parse_relational_expression(void)
 		    case T_LESS_THAN_OR_EQUAL_TO: op = IR_OC_LTE; break;
 		    case T_GREATER_THAN_OR_EQUAL_TO: op = IR_OC_GTE; break;
             default: {
-                lex_setpos(yytext);
+                lex_setpos(lex_pos_last);
 
                 goto OK;
             }
@@ -1114,7 +1116,7 @@ static ParseReturn parse_shift_expression(void)
 {
 	IROpCode op;
 	IRSSAEnt *lhs;
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
     
@@ -1127,7 +1129,7 @@ static ParseReturn parse_shift_expression(void)
             case T_BITWISE_LEFTSHIFT: op = IR_OC_SAL; break;
         	case T_BITWISE_RIGHTSHIFT: op = IR_OC_SAR; break;
             default: {
-                lex_setpos(yytext);
+                lex_setpos(lex_pos_last);
 
                 goto OK;
             }
@@ -1151,7 +1153,7 @@ static ParseReturn parse_additive_expression(void)
 {
 	IROpCode op;
 	IRSSAEnt *lhs;
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
     
@@ -1164,7 +1166,7 @@ static ParseReturn parse_additive_expression(void)
 			case T_PLUS: op = IR_OC_ADD; break;
         	case T_MINUS: op = IR_OC_SUB; break;
 			default: {
-				lex_setpos(yytext);
+				lex_setpos(lex_pos_last);
 
 				goto OK;
 			}
@@ -1188,7 +1190,7 @@ static ParseReturn parse_multiplicative_expression(void)
 {
 	IROpCode op;
 	IRSSAEnt *lhs;
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
     
@@ -1202,7 +1204,7 @@ static ParseReturn parse_multiplicative_expression(void)
 		    case '/': op = IR_OC_DIV; break;
 		    case '%':  op = IR_OC_MOD; break;
             default: {
-                lex_setpos(yytext);
+                lex_setpos(lex_pos_last);
 
                 goto OK;
             }
@@ -1224,7 +1226,7 @@ ERROR:
 
 static ParseReturn parse_cast_expression(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -1253,7 +1255,7 @@ ERROR:
 
 static ParseReturn parse_unary_expression(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -1305,7 +1307,7 @@ ERROR:
 
 static ParseReturn parse_postfix_expression(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -1336,7 +1338,7 @@ static ParseReturn parse_postfix_expression(void)
                 
             } break;
             default: {
-                lex_setpos(yytext);
+                lex_setpos(lex_pos_last);
                 
                 goto OK;
             }
@@ -1370,14 +1372,14 @@ OK:
 	return PARSE_OK;
 
 ERROR:
-    lex_setpos(yytext);
+    lex_setpos(lex_pos_last);
 
 	return PARSE_ERROR;
 }
 
 static ParseReturn parse_primary_expression(void)
 {
-	char *lex_pos_saved;
+	LexPos lex_pos_saved;
 
     lex_pos_saved = lex_tell();
 
@@ -1397,7 +1399,7 @@ static ParseReturn parse_primary_expression(void)
 
 		goto OK;
     } else {
-    	lex_setpos(yytext);
+		lex_setpos(lex_pos_last);
     }
 
     parse_opt(parse_string, OK);
@@ -1423,7 +1425,7 @@ ERROR:
 
 static ParseReturn parse_argument_expression_list(void)
 {
-	char *lex_pos_saved;
+	LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
@@ -1431,7 +1433,7 @@ static ParseReturn parse_argument_expression_list(void)
 		parse_required(parse_assignment_expression, ERROR);
 
 		if (yylex() != ',') {
-		    lex_setpos(yytext);
+		    lex_setpos(lex_pos_last);
 		    
 		    goto OK;
 		}
@@ -1448,7 +1450,7 @@ ERROR:
 
 static ParseReturn parse_assignment_expression(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
@@ -1504,7 +1506,7 @@ static ParseReturn parse_constant(void)
     return PARSE_OK;
     
 ERROR:
-	lex_setpos(yytext);
+	lex_setpos(lex_pos_last);
 	
 	return PARSE_ERROR;
 }
@@ -1517,7 +1519,7 @@ static ParseReturn parse_string(void)
     }
 
 /* ERROR: */
-    lex_setpos(yytext);
+    lex_setpos(lex_pos_last);
 
     return PARSE_ERROR;
 }
@@ -1539,7 +1541,7 @@ static ParseReturn parse_assignment_operator(void)
             return PARSE_OK;
         }
         default: {
-        	lex_setpos(yytext);
+			lex_setpos(lex_pos_last);
 
         	return PARSE_ERROR;
         }
@@ -1574,7 +1576,7 @@ static ParseReturn parse_parameter_list(void)
 		++node_count;
 
 		if (yylex() != ',') {
-		    lex_setpos(yytext);
+		    lex_setpos(lex_pos_last);
 		    
 		    goto OK;
 		}
@@ -1585,7 +1587,7 @@ CHECK_ERROR:
 		goto ERROR;
 	}
 
-	lex_setpos(yytext); /* RESTORES LAST ',' */
+	lex_setpos(lex_pos_last); /* RESTORES LAST ',' */
 
 OK:
     return PARSE_OK;
@@ -1614,7 +1616,7 @@ ERROR:
 static ParseReturn parse_direct_abstract_declarator(void)
 {
 	size_t node_count = 0;
-	char *lex_pos_saved;
+	LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
@@ -1685,7 +1687,7 @@ ERROR:
 
 static ParseReturn parse_enumerator_list(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
@@ -1693,7 +1695,7 @@ static ParseReturn parse_enumerator_list(void)
 		parse_required(parse_enumerator, ERROR);
 
 		if (yylex() != ',') {
-		    lex_setpos(yytext);
+		    lex_setpos(lex_pos_last);
 
 		    goto OK;
 		}
@@ -1711,14 +1713,14 @@ ERROR:
 
 static ParseReturn parse_enumerator(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
     parse_required(parse_identifier, ERROR);
 
     if (yylex() != '=') {
-        lex_setpos(yytext);
+        lex_setpos(lex_pos_last);
 
         goto OK;
     }
@@ -1736,7 +1738,7 @@ ERROR:
 
 static ParseReturn parse_init_declarator_list(void)
 {
-	char *lex_pos_saved;
+	LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
@@ -1744,7 +1746,7 @@ static ParseReturn parse_init_declarator_list(void)
 		parse_required(parse_init_declarator, ERROR);
 		
 		if (yylex() != ',') {
-			lex_setpos(yytext);
+			lex_setpos(lex_pos_last);
 
 			goto OK;
 		}
@@ -1761,14 +1763,14 @@ ERROR:
 
 static ParseReturn parse_init_declarator(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
     parse_required(parse_declarator, ERROR);
 
     if (yylex() != '=') {
-        lex_setpos(yytext);
+        lex_setpos(lex_pos_last);
 
         goto OK;
     }
@@ -1786,7 +1788,7 @@ ERROR:
 
 static ParseReturn parse_initializer(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
@@ -1799,7 +1801,7 @@ static ParseReturn parse_initializer(void)
     parse_required(parse_initializer_list, ERROR);
 
     if (yylex() != ',') {
-        lex_setpos(yytext);
+        lex_setpos(lex_pos_last);
     }
 
     if (yylex() != '}') {
@@ -1825,7 +1827,7 @@ static ParseReturn parse_initializer_list(void)
 		++node_count;
 
 		if (yylex() != ',') {
-		    lex_setpos(yytext);
+		    lex_setpos(lex_pos_last);
 		    
 		    goto OK;
 		}
@@ -1836,7 +1838,7 @@ CHECK_ERROR:
 		goto ERROR;
 	}
 
-	lex_setpos(yytext); /* RESTORES LAST ',' */
+	lex_setpos(lex_pos_last); /* RESTORES LAST ',' */
 
 OK:
     return PARSE_OK;
@@ -1868,7 +1870,7 @@ OK:
 
 static ParseReturn parse_labeled_statement(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
@@ -1928,7 +1930,7 @@ ERROR:
 
 static ParseReturn parse_expression_statement(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
@@ -1949,7 +1951,7 @@ ERROR:
 
 static ParseReturn parse_selection_statement(void)
 {
-	char *lex_pos_saved;
+	LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
@@ -1987,7 +1989,7 @@ static ParseReturn parse_selection_statement(void)
 				
 				ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(ir_ctx->label_select_end), NULL, NULL);
 			} else {
-				lex_setpos(yytext);
+				lex_setpos(lex_pos_last);
 			}
 
 			/* LABEL END */
@@ -2016,7 +2018,7 @@ static ParseReturn parse_iteration_statement(void)
 	const size_t before_label_iter_begin = ir_ctx->label_iter_begin;
 	const size_t before_label_iter_end = ir_ctx->label_iter_end;
 	const size_t label_tmp_saved = ir_ctx->label_tmp;
-	char *lex_pos_saved;
+	LexPos lex_pos_saved;
 
 	ir_ctx->label_iter_begin = ir_ctx->label_tmp++;
 	ir_ctx->label_iter_end = ir_ctx->label_tmp++;
@@ -2153,7 +2155,7 @@ ERROR:
 
 static ParseReturn parse_jump_statement(void)
 {
-    char *lex_pos_saved;
+    LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
