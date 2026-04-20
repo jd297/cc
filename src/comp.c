@@ -61,7 +61,7 @@ int compiler_c_run(Compiler_C *compiler)
 	yyparse_result = yyparse();
 
 	if (yyparse_result == -1) {
-		fprintf(stderr, "%d errors generated.", parse_error_count);
+		fprintf(stderr, "%d error%s generated.\n", parse_error_count, parse_error_count > 1 ? "s" : "");
 		return -1;
 	}
 

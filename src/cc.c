@@ -225,7 +225,6 @@ char *produce_target_extension(char *input_file, const char *target_extension)
 		};
 
 		if (preprocessor_c_run(&preprocessor) == -1) { // TODO free on errro source_f
-			warnx("%s: error: preprocessor: something failed!", input_file);
 	        return NULL;
 	    }
 	    
@@ -271,7 +270,6 @@ char *produce_target_extension(char *input_file, const char *target_extension)
 		};
 
 		if (compiler_c_run(&compiler) == -1) {
-			warnx("%s: error: compiler: something failed!", input_file);
 			return NULL;
 		}
 
@@ -448,12 +446,12 @@ int main(int argc, char **argv)
 		};
 
 		if (preprocessor_c_run(&preprocessor) == -1) { // TODO free on error source_f
-	        return EXIT_FAILURE;
+	        exit(EXIT_FAILURE);
 	    }
 	    
 	    vec_free(&source_files);
 	    
-	    return EXIT_SUCCESS;
+	    exit(EXIT_SUCCESS);
 	}
 
 	if (Sflag == 1) {
@@ -467,7 +465,7 @@ int main(int argc, char **argv)
 			}
 
 			if (produce_target_extension(input_file, ".s") == NULL) {
-				code = EXIT_FAILURE;
+				exit(EXIT_FAILURE);
 			}
 		}
 		
@@ -485,7 +483,7 @@ int main(int argc, char **argv)
 			}
 
 			if (produce_target_extension(input_file, ".o") == NULL) {
-				code = EXIT_FAILURE;
+				exit(EXIT_FAILURE);
 			}
 		}
 		
@@ -504,8 +502,7 @@ int main(int argc, char **argv)
 		char *linker_file;
 
 		if ((linker_file = produce_target_extension(input_file, ".x")) == NULL) { // TODO HACK .x
-			// code = EXIT_FAILURE; // TODO
-			continue;
+			exit(EXIT_FAILURE);
 		}
 
 		// TODO maybe: toolchain_add_input_file(&toolchain, linker_file);
