@@ -47,9 +47,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 extern void flog(FILE *stream, int level, const char *format, ...);
 
-extern void flog_at(FILE *stream, int level, const char *pathname, size_t row, size_t col, const char *format, va_list ap);
+extern void flog_at(FILE *stream, int level, const char *pathname, int row, size_t col, const char *format, ...);
 
-extern void flog_line(FILE *stream, size_t row, const char *format, ...);
+extern void flog_line(FILE *stream, int row, const char *begin);
 
 extern void flog_ptr(FILE *stream, const char *begin, const char *pos, size_t len);
 
@@ -82,14 +82,14 @@ void flog(FILE *stream, int level, const char *format, ...)
 	va_end(ap);
 }
 
-void flog_at(FILE *stream, int level, const char *pathname, size_t row, size_t col, const char *format, va_list ap)
+void flog_at(FILE *stream, int level, const char *pathname, int row, size_t col, const char *format, ...)
 {
     if (pathname != NULL) {
         fprintf(stream, "%s:", pathname);
     }
     
     if (row != 0) {
-        fprintf(stream, "%zu:", row);
+        fprintf(stream, "%d:", row);
     }
 
     if (col != 0) {
@@ -100,16 +100,7 @@ void flog_at(FILE *stream, int level, const char *pathname, size_t row, size_t c
 
     flog_level(stream, level);
 
-	vfprintf(stream, format, ap);
-	
-	fprintf(stream, "\n");
-}
-
-void flog_line(FILE *stream, size_t row, const char *format, ...)
-{
-    fprintf(stream, "%zu\t| ", row);
-    
-    va_list ap;
+	va_list ap;
 	va_start(ap, format);
 	vfprintf(stream, format, ap);
 	va_end(ap);
@@ -117,9 +108,20 @@ void flog_line(FILE *stream, size_t row, const char *format, ...)
 	fprintf(stream, "\n");
 }
 
+void flog_line(FILE *stream, int row, const char *begin)
+{
+    fprintf(stream, "%5d | ", row);
+    
+    while (*begin != '\0' && *begin != '\n') {
+    	fprintf(stream, "%c", *begin++);
+    }
+	
+	fprintf(stream, "\n");
+}
+
 void flog_ptr(FILE *stream, const char *begin, const char *pos, size_t len)
 {
-    fprintf(stream, "\t| ");
+    fprintf(stream, "      | ");
     
     for (const char *i = begin; i < pos; ++i) {
         if (*i == '\t') {

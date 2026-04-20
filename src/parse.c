@@ -2,6 +2,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#include <jd297/logger.h>
+
 #define JD297_CC_PARSE_IMPLEMENTATION
 #include "parse.h"
 #include "lex.h"
@@ -1395,7 +1397,11 @@ static ParseReturn parse_primary_expression(void)
 
 		object_entry = symtbl_get_object_entry(parse_scope_current, &lex_tok.literal.sv);
 
-		assert(object_entry != NULL && "semantical error undeclared identifier");
+		flog_at(stderr, L_ERROR, "test.c", lex_lineno, lex_col, "use of undeclared identifier \'"SV_FMT"\'", SV_PARAMS(&lex_tok.literal.sv));	
+		flog_line(stderr, lex_lineno, lex_line_begin_p);
+		flog_ptr(stderr, lex_line_begin_p, yytext, yyleng);
+		++parse_error_count;
+		//assert(object_entry != NULL && "semantical error undeclared identifier");
 
 		goto OK;
     } else {
