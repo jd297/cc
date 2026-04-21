@@ -63,8 +63,6 @@ typedef struct {
 
 static ParseDeclarationState decl_state;
 
-static sv_t parse_direct_declarator_id;
-
 static void parse_decl_state_build_dtype(void)
 {
 	switch (decl_state.decl_spec.data_structure_type) {

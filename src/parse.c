@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#include <jd297/sv.h>
 #include <jd297/logger.h>
 
 #define JD297_CC_PARSE_IMPLEMENTATION
@@ -16,6 +17,7 @@ int parse_error_count;
 static Symtbl *parse_scope_global;
 static Symtbl *parse_scope_current;
 static SymtblEntry *parse_function_entry;
+static sv_t parse_current_identifier;
 
 extern int yyparse(void)
 {
@@ -360,19 +362,14 @@ ERROR:
 
 static ParseReturn parse_typedef_name(void)
 {
-	Tok identifier_tok;
     LexPos lex_pos_saved;
     SymtblEntry *typedef_name_entry;
 
     lex_pos_saved = lex_tell();
 
-	if (yylex() != T_IDENTIFIER) {
-		goto ERROR;
-	}
-	
-	identifier_tok = lex_tok;
+	parse_required(parse_identifier, ERROR);
 
-	typedef_name_entry = symtbl_get_typedef_name_entry(parse_scope_current, &identifier_tok.literal.sv);
+	typedef_name_entry = symtbl_get_typedef_name_entry(parse_scope_current, &parse_current_identifier);
 
 	if (typedef_name_entry == NULL) {
 		goto ERROR;
@@ -422,8 +419,9 @@ static ParseReturn parse_struct_or_union(void)
 
 static ParseReturn parse_identifier(void)
 {
-	/* TODO REMOVE THIS FUNCTION, THE LOOKAHEAD IS TRIVIAL NOW */
     if (yylex() == T_IDENTIFIER) {
+    	parse_current_identifier = lex_tok.literal.sv;
+
         return PARSE_OK;
     }
 
@@ -579,13 +577,7 @@ static ParseReturn parse_direct_declarator(void)
 
 	lex_pos_saved = lex_tell();
 
-	if (yylex() == T_IDENTIFIER) {
-		parse_direct_declarator_id = lex_tok.literal.sv;
-		
-		goto NEXT;
-    }
-
-	lex_setpos(lex_pos_saved);
+	parse_opt(parse_identifier, NEXT);
 
 	if (yylex() != '(') {
 		lex_setpos(lex_pos_saved);
@@ -614,7 +606,7 @@ NEXT:
 				Symtbl *scope_saved = parse_scope_current;
 				SymtblEntryClass eclass = decl_state.eclass;
 				SymtblEntry *sym_entry = symtbl_add_function_entry(
-							parse_scope_current, parse_direct_declarator_id, 
+							parse_scope_current, parse_current_identifier,
 							ir_dtype_assign(&decl_state.dtype));
 
 				assert(sym_entry != NULL);
@@ -666,7 +658,7 @@ NEXT:
 				switch(decl_state.eclass) {
 					case SYM_CLASS_OBJECT: {
 						SymtblEntry *sym_entry = symtbl_add_object_entry(
-							parse_scope_current, parse_direct_declarator_id, 
+							parse_scope_current, parse_current_identifier,
 							ir_dtype_assign(&decl_state.dtype));
 
 						assert(sym_entry != NULL);
@@ -675,7 +667,7 @@ NEXT:
 					} break;
 					case SYM_CLASS_TYPEDEF_NAME: {
 						SymtblEntry *sym_entry = symtbl_add_typedef_name_entry(
-							parse_scope_current, parse_direct_declarator_id, 
+							parse_scope_current, parse_current_identifier,
 							ir_dtype_assign(&decl_state.dtype));
 
 						assert(sym_entry != NULL);
@@ -1396,11 +1388,16 @@ static ParseReturn parse_primary_expression(void)
 
 		object_entry = symtbl_get_object_entry(parse_scope_current, &lex_tok.literal.sv);
 
-		flog_at(stderr, L_ERROR, "test.c", lex_lineno, lex_col, "use of undeclared identifier \'"SV_FMT"\'", SV_PARAMS(&lex_tok.literal.sv));	
-		flog_line(stderr, lex_lineno, lex_line_begin_p);
-		flog_ptr(stderr, lex_line_begin_p, yytext, yyleng);
-		++parse_error_count;
-		//assert(object_entry != NULL && "semantical error undeclared identifier");
+		if (object_entry == NULL) {
+			flog_at(stderr, L_ERROR, "test.c", lex_lineno, lex_col, "use of undeclared identifier \'"SV_FMT"\'", SV_PARAMS(&lex_tok.literal.sv));	
+			flog_line(stderr, lex_lineno, lex_line_begin_p);
+			flog_ptr(stderr, lex_line_begin_p, yytext, yyleng);
+			++parse_error_count;
+		} else {
+			/* TODO CHECK object_entry->dtype->storage_flags
+			...: NONE, AUTO, STATIC, EXTERN */
+			ir_ctx->ssa_latest = ir_ssa_from_stack(&object_entry->as.object.addr, object_entry->dtype);
+		}
 
 		goto OK;
     } else {
@@ -1768,11 +1765,29 @@ ERROR:
 
 static ParseReturn parse_init_declarator(void)
 {
+	SymtblEntry *object_entry;
+	IRSSAEnt *local;
     LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
     parse_required(parse_declarator, ERROR);
+
+	object_entry = symtbl_get_object_entry(parse_scope_current, &parse_current_identifier);
+
+	if (object_entry == NULL) {
+		flog_at(stderr, L_ERROR, "test.c", lex_lineno, lex_col, "use of undeclared identifier \'"SV_FMT"\'", SV_PARAMS(&lex_tok.literal.sv));   
+		flog_line(stderr, lex_lineno, lex_line_begin_p);
+		flog_ptr(stderr, lex_line_begin_p, yytext, yyleng);
+		++parse_error_count;
+	} else {
+		/* TODO CHECK object_entry->dtype->storage_flags
+		...: NONE, AUTO, STATIC, EXTERN */
+		
+		local = ir_ssa_from_stack(&object_entry->as.object.addr, object_entry->dtype);
+		
+		ir_emit(IR_OC_LOCAL, object_entry->dtype, local, NULL, NULL);
+	}
 
     if (yylex() != '=') {
         lex_setpos(lex_pos_last);
@@ -1782,6 +1797,9 @@ static ParseReturn parse_init_declarator(void)
 
     parse_required(parse_initializer, ERROR);
 
+	if (object_entry != NULL) {
+		ir_emit(IR_OC_STORE, object_entry->dtype, local, ir_ssa_latest(), NULL);
+	}
 OK:
     return PARSE_OK;
 
