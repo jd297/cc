@@ -14,7 +14,6 @@
 int parse_error_count;
 
 static Symtbl *parse_scope_global;
-static Symtbl *parse_scope_function;
 static Symtbl *parse_scope_current;
 static SymtblEntry *parse_function_entry;
 
