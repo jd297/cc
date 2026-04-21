@@ -1452,23 +1452,72 @@ ERROR:
 
 static ParseReturn parse_assignment_expression(void)
 {
+	TokType assignment_operator;
+	IROpCode op;
+	IRSSAEnt *lval, *rval, *arg1, *arg2;
+	list_t tmp, *code = ir_ctx->code;
+	list_node_t *code_current = ir_ctx->code_current;
     LexPos lex_pos_saved;
 
 	lex_pos_saved = lex_tell();
 
-    parse_required(parse_unary_expression, NEXT_CONDITIONAL_EXPRESSION);
+	/* SETUP TMP LIST IN SWAP IT WITH IR_CTX CODE LIST */
+	list_create(&tmp);
+	ir_ctx->code_current = list_begin(&tmp);
+	ir_ctx->code = &tmp;
 
-    parse_required(parse_assignment_operator, NEXT_CONDITIONAL_EXPRESSION_REMOVE_PREV);
+	if (parse_unary_expression() == PARSE_ERROR) {
+		goto CONDITIONAL_EXPRESSION;
+	}
 
-    parse_required(parse_assignment_expression, ERROR);
+	lval = ir_ssa_latest();
+
+	switch(assignment_operator = yylex()) {
+        case '=': op = IR_OC_STORE; break;
+        case T_MULTIPLY_ASSIGN: op = IR_OC_MUL; break;
+        case T_DIVIDE_ASSIGN: op = IR_OC_DIV; break;
+        case T_MODULUS_ASSIGN: op = IR_OC_MOD; break;
+        case T_PLUS_ASSIGN: op = IR_OC_ADD; break;
+        case T_MINUS_ASSIGN: op = IR_OC_SUB; break;
+        case T_BITWISE_LEFTSHIFT_ASSIGN: op = IR_OC_SAL; break;
+        case T_BITWISE_RIGHTSHIFT_ASSIGN: op = IR_OC_SAR; break;
+        case T_BITWISE_AND_ASSIGN: op = IR_OC_AND; break;
+        case T_BITWISE_XOR_ASSIGN: op = IR_OC_XOR; break;
+        case T_BITWISE_OR_ASSIGN: op = IR_OC_OR; break;
+        default: {
+			goto CONDITIONAL_EXPRESSION;
+        }
+    }
+
+	parse_required(parse_assignment_expression, ERROR);
+
+	rval = ir_ssa_latest();
+
+	if (assignment_operator == '=') {
+		arg1 = rval;
+		arg2 = NULL;
+	} else {
+		arg1 = lval;
+		arg2 = rval;
+	}
+
+	ir_emit(op, lval->dtype, lval, arg1, arg2);
+
+	/* INSERT TMP LIST INTO IR_CTX CODE LIST */
+	ir_ctx->code = code;
+	ir_ctx->code_current = list_insert_range(ir_ctx->code, code_current, list_begin(&tmp), list_end(&tmp));
+	list_free(&tmp);
 
 	goto OK;
 
-NEXT_CONDITIONAL_EXPRESSION_REMOVE_PREV:
-
-NEXT_CONDITIONAL_EXPRESSION:
+CONDITIONAL_EXPRESSION:
 	lex_setpos(lex_pos_saved);
-	
+			
+	/* FREE TMP BUFFER AND SWAP BACK TO IR_CTX CODE LIST */
+	list_free(&tmp);
+	ir_ctx->code_current = code_current;
+	ir_ctx->code = code;
+
 	parse_required(parse_conditional_expression, ERROR);
 
 OK:
@@ -1524,30 +1573,6 @@ static ParseReturn parse_string(void)
     lex_setpos(lex_pos_last);
 
     return PARSE_ERROR;
-}
-
-static ParseReturn parse_assignment_operator(void)
-{
-    switch(yylex()) {
-        case T_ASSIGNMENT:
-        case T_MULTIPLY_ASSIGN:
-        case T_DIVIDE_ASSIGN:
-        case T_MODULUS_ASSIGN:
-        case T_PLUS_ASSIGN:
-        case T_MINUS_ASSIGN:
-        case T_BITWISE_LEFTSHIFT_ASSIGN:
-        case T_BITWISE_RIGHTSHIFT_ASSIGN:
-        case T_BITWISE_AND_ASSIGN:
-        case T_BITWISE_XOR_ASSIGN:
-        case T_BITWISE_OR_ASSIGN: {
-            return PARSE_OK;
-        }
-        default: {
-			lex_setpos(lex_pos_last);
-
-        	return PARSE_ERROR;
-        }
-    }
 }
 
 static ParseReturn parse_abstract_declarator(void)

@@ -54,6 +54,8 @@ extern list_node_t *list_insert(list_t *list, list_node_t *pos, void *value);
 
 extern list_node_t *list_erase(list_t *list, list_node_t *pos);
 
+extern list_node_t *list_insert_range(list_t *list, list_node_t *pos, list_node_t *begin, list_node_t *end);
+
 #define list_begin(list) (list)->begin
 #define list_end(list) (list)->end
 #define list_next(node) (node)->next
@@ -126,6 +128,17 @@ list_node_t *list_erase(list_t *list, list_node_t *pos)
 	free(pos);
 	
 	return next;
+}
+
+list_node_t *list_insert_range(list_t *list, list_node_t *pos, list_node_t *begin, list_node_t *end)
+{
+	list_node_t *it;
+
+	for (it = begin; it != end; it = list_next(it)) {
+		pos = list_insert(list, pos == list_end(list) ? pos : list_next(pos), it->value);
+	}
+	
+	return pos;
 }
 
 void list_free(list_t *list)

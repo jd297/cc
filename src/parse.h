@@ -541,7 +541,6 @@ static ParseReturn parse_argument_expression_list(void);
 static ParseReturn parse_assignment_expression(void);
 static ParseReturn parse_constant(void);
 static ParseReturn parse_string(void);
-static ParseReturn parse_assignment_operator(void);
 static ParseReturn parse_abstract_declarator(void);
 static ParseReturn parse_parameter_list(void);
 static ParseReturn parse_parameter_declaration(void);
