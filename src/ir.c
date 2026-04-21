@@ -212,12 +212,13 @@ IRSSAEnt *ir_ssa_from_str(size_t str)
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_stack(size_t *stack)
+IRSSAEnt *ir_ssa_from_stack(size_t *stack, const IRDataType *dtype)
 {
 	IRSSAEnt *ssa = calloc(1, sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_STACK;
 	ssa->as.stack = stack;
+	ssa->dtype = dtype;
 
 	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ssa);
 

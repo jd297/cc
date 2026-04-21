@@ -238,7 +238,7 @@ extern IRSSAEnt *ir_ssa_default(const IRDataType *dtype);
 extern IRSSAEnt *ir_ssa_from_view(sv_t *view);
 extern IRSSAEnt *ir_ssa_from_num(size_t num);
 extern IRSSAEnt *ir_ssa_from_str(size_t str);
-extern IRSSAEnt *ir_ssa_from_stack(size_t *stack);
+extern IRSSAEnt *ir_ssa_from_stack(size_t *stack, const IRDataType *dtype);
 extern IRSSAEnt *ir_ssa_from_addr(size_t *addr);
 extern IRSSAEnt *ir_ssa_from_literal(IRLiteral literal, const IRDataType *dtype);
 extern IRSSAEnt *ir_ssa_from_reg(size_t reg, const IRDataType *dtype);
