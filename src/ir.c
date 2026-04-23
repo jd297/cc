@@ -327,7 +327,7 @@ void ir_emit(IROpCode op, const IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *a
 		case IR_OC_LT:
 		case IR_OC_GTE:
 		case IR_OC_LTE: {
-			if (dtype == NULL) code->dtype = ir_arithmetic_dtype(arg1->dtype, arg2->dtype);
+			if (dtype == NULL) code->dtype = ir_arithmetic_dtype(arg1->dtype, arg2 ? arg2->dtype : NULL);
 			if (result == NULL) code->result = ir_ssa_default(code->dtype);
 		} break;
 		default: break;
