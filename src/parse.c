@@ -1254,21 +1254,44 @@ static ParseReturn parse_unary_expression(void)
 
     parse_opt(parse_postfix_expression, OK);
 
-    parse_required(parse_unary_operator, MORE_TOKENS);
-    
-    parse_required(parse_cast_expression, ERROR);
-    
-    return PARSE_OK;
-
-MORE_TOKENS:
     switch(yylex()) {
-        case T_INCREMENT:
+    	case '&': {
+    		assert(0 && "TODO not implemented with: &");
+
+        	parse_required(parse_cast_expression, ERROR);
+        } break;
+        case '*': {
+        	assert(0 && "TODO not implemented with: *");
+
+        	parse_required(parse_cast_expression, ERROR);
+        } break;
+        case '+': {
+        	parse_required(parse_cast_expression, ERROR);
+        } break;
+        case '-': {
+        	parse_required(parse_cast_expression, ERROR);
+
+			ir_emit(IR_OC_SUB, NULL, NULL, ir_ssa_from_literal(ir_literal_from_lu(0), ir_ssa_latest()->dtype), ir_ssa_latest());
+        } break;
+        case '~': {
+        	assert(0 && "TODO not implemented with: ~");
+
+        	parse_required(parse_cast_expression, ERROR);
+        } break;
+        case '!': {
+			assert(0 && "TODO not implemented with: !");
+
+        	parse_required(parse_cast_expression, ERROR);
+        } break;
+        case T_INCREMENT: {
+            parse_required(parse_unary_expression, ERROR);
+        } break;
         case T_DECREMENT: {
             parse_required(parse_unary_expression, ERROR);
         } break;
         case T_SIZEOF: {
             parse_opt(parse_unary_expression, OK);
-            
+
             parse_required(parse_type_name, ERROR);
         } break;
         default: goto ERROR;
@@ -1345,29 +1368,6 @@ ERROR:
     lex_setpos(lex_pos_saved);
 
     return PARSE_ERROR;
-}
-
-static ParseReturn parse_unary_operator(void)
-{
-    switch (yylex()) {
-        case '&':
-        case '*':
-        case '+':
-        case '-':
-        case '~':
-        case '!': {
-            goto OK;
-        }
-        default: goto ERROR;
-    }
-
-OK:
-	return PARSE_OK;
-
-ERROR:
-    lex_setpos(lex_pos_last);
-
-	return PARSE_ERROR;
 }
 
 static ParseReturn parse_primary_expression(void)
