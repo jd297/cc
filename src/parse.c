@@ -1279,9 +1279,9 @@ static ParseReturn parse_unary_expression(void)
         	parse_required(parse_cast_expression, ERROR);
         } break;
         case '!': {
-			assert(0 && "TODO not implemented with: !");
-
-        	parse_required(parse_cast_expression, ERROR);
+			parse_required(parse_cast_expression, ERROR);
+        	
+        	ir_emit(IR_OC_EQ, NULL, NULL, ir_ssa_from_literal(ir_literal_from_lu(0), ir_ssa_latest()->dtype), ir_ssa_latest());
         } break;
         case T_INCREMENT: {
             parse_required(parse_unary_expression, ERROR);
