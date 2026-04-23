@@ -1274,9 +1274,9 @@ static ParseReturn parse_unary_expression(void)
 			ir_emit(IR_OC_SUB, NULL, NULL, ir_ssa_from_literal(ir_literal_from_lu(0), ir_ssa_latest()->dtype), ir_ssa_latest());
         } break;
         case '~': {
-        	assert(0 && "TODO not implemented with: ~");
-
         	parse_required(parse_cast_expression, ERROR);
+
+        	ir_emit(IR_OC_NOT, NULL, NULL, ir_ssa_latest(), NULL);
         } break;
         case '!': {
 			parse_required(parse_cast_expression, ERROR);
