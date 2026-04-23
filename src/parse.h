@@ -536,7 +536,6 @@ static ParseReturn parse_unary_expression(void);
 static ParseReturn parse_type_name(void);
 static ParseReturn parse_postfix_expression(void);
 static ParseReturn parse_primary_expression(void);
-static ParseReturn parse_argument_expression_list(void);
 static ParseReturn parse_assignment_expression(void);
 static ParseReturn parse_constant(void);
 static ParseReturn parse_string(void);

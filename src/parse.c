@@ -1339,11 +1339,45 @@ static ParseReturn parse_postfix_expression(void)
                 }
             } break;
             case '(': {
-                parse_list_opt(parse_argument_expression_list);
+            	size_t i = 0;
+            	vector_t arguments = { 0 };
+            	IRSSAEnt *function = ir_ssa_latest();
+
+				if (function->dtype->type != IR_TYPE_POINTER && function->dtype->as.pointer.to->type != IR_TYPE_FUNCTION) {
+					assert(0 && "... is not a function or function pointer");
+				}
+
+                while (1) {
+					if (parse_assignment_expression() == PARSE_ERROR) {
+						if (i == 0) {
+							break;
+						}
+
+						goto ERROR;
+					}
+
+					/* TODO semantical check on arguments */
+                	vec_push_back(&arguments, ir_ssa_latest());
+
+					if (yylex() != ',') {
+						lex_setpos(lex_pos_last);
+						
+						break;
+					}
+					
+					++i;
+				}
                 
                 if (yylex() != ')') {
                     goto ERROR;
                 }
+
+				for (i = 0; i < vec_size(&arguments); ++i) {
+					/* 2nd arg should be from function type ?? */
+					ir_emit(IR_OC_PARAM, ((IRSSAEnt *)vec_at(&arguments, i))->dtype, ir_ssa_from_num(i + 1), vec_at(&arguments, i), NULL);
+				}
+
+                ir_emit(IR_OC_CALL, function->dtype->as.pointer.to->as.function.ret, NULL, function, NULL);
             } break;
             case '.':
             case T_ARROW: {
@@ -1380,29 +1414,46 @@ static ParseReturn parse_primary_expression(void)
 	SEMANTICAL ERROR FOR UNDECLARED IDENTIFIER */
 	parse_opt(parse_constant, OK);
 
-    if (yylex() == T_IDENTIFIER) {
-    	/* TODO */
-		/* TODO MAYBE JUST SET ssa_latest */
-		/* TODO SYM ENTRY SHOULD BE AN SSA_ENT */
+	if (parse_identifier() == PARSE_OK) {
 		SymtblEntry *object_entry;
 
-		object_entry = symtbl_get_object_entry(parse_scope_current, &lex_tok.literal.sv);
+		object_entry = symtbl_get_object_entry(parse_scope_current, &parse_current_identifier);
+		
+		if (object_entry == NULL) {
+			if (yylex() == '(') {
+				/* IMPLICIT FUNCTION DECLARATION:
+				extern int identifier();
+				"pointer to function returning int" is the expression result
+				*/
+				IRDataType *dtype = ir_dtype_pointer(ir_dtype_function(
+					ir_dtype_from_primitive(codegen_get_primitive_data_type(IR_GENERIC_INT), IR_QUALIFIER_FLAG_NONE, IR_STORAGE_FLAG_NONE),
+					IR_STORAGE_FLAG_EXTERN));
+				
+				object_entry = symtbl_add_function_entry(parse_scope_current, parse_current_identifier, dtype);
+				object_entry->as.function.argc = 0;
+			}
+
+			lex_setpos(lex_pos_last);
+	 	}
 
 		if (object_entry == NULL) {
-			flog_at(stderr, L_ERROR, "test.c", lex_lineno, lex_col, "use of undeclared identifier \'"SV_FMT"\'", SV_PARAMS(&lex_tok.literal.sv));	
-			flog_line(stderr, lex_lineno, lex_line_begin_p);
-			flog_ptr(stderr, lex_line_begin_p, yytext, yyleng);
-			++parse_error_count;
-		} else {
-			/* TODO CHECK object_entry->dtype->storage_flags
-			...: NONE, AUTO, STATIC, EXTERN */
+			assert(0 && "undeclared identifier");
+
+			goto OK; /* TODO and error recovery */
+		}
+
+	 	if ((object_entry->dtype->storage_flags == IR_STORAGE_FLAG_NONE) || (object_entry->dtype->storage_flags & IR_STORAGE_FLAG_AUTO)) {
 			ir_ctx->ssa_latest = ir_ssa_from_stack(&object_entry->as.object.addr, object_entry->dtype);
+		} else if (object_entry->dtype->storage_flags & IR_STORAGE_FLAG_EXTERN) {
+			ir_ctx->ssa_latest = ir_ssa_from_view(parse_current_identifier, object_entry->dtype);
+		} else if (object_entry->dtype->storage_flags & IR_STORAGE_FLAG_STATIC) {
+			assert(0 && "TODO not implemented with IR_STORAGE_FLAG_STATIC");
+		} else {
+			assert(0 && "NOT REACHABLE");
 		}
 
 		goto OK;
-    } else {
-		lex_setpos(lex_pos_last);
-    }
+	}
 
     parse_opt(parse_string, OK);
 
@@ -1415,31 +1466,6 @@ static ParseReturn parse_primary_expression(void)
     if (yylex() != ')') {
         goto ERROR;
     }
-
-OK:
-    return PARSE_OK;
-
-ERROR:
-    lex_setpos(lex_pos_saved);
-
-    return PARSE_ERROR;
-}
-
-static ParseReturn parse_argument_expression_list(void)
-{
-	LexPos lex_pos_saved;
-
-	lex_pos_saved = lex_tell();
-
-	while (1) {
-		parse_required(parse_assignment_expression, ERROR);
-
-		if (yylex() != ',') {
-		    lex_setpos(lex_pos_last);
-		    
-		    goto OK;
-		}
-	}
 
 OK:
     return PARSE_OK;

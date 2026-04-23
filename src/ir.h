@@ -5,6 +5,7 @@
 
 #include <jd297/sv.h>
 #include <jd297/list.h>
+#include <jd297/vector.h>
 #include <jd297/lmap_sv.h>
 
 typedef struct IRDataType IRDataType;
@@ -75,6 +76,7 @@ typedef enum {
 	IR_TYPE_STRUCT,
 	IR_TYPE_ARRAY,
 	IR_TYPE_POINTER,
+	IR_TYPE_FUNCTION,
 	IR_TYPE_NONE
 } IRDataArgType;
 
@@ -101,12 +103,20 @@ struct IRDataType {
 		IRStructDataType *structure;
 		IRArrayDataType array;
 		IRPointerDataType pointer;
+		struct {
+			IRDataType *ret;
+			vector_t parameter; /* of (IRDataType *) */
+		} function;
 	} as;
 };
 
 IRDataType *ir_dtype_assign(IRDataType *src);
 
 IRDataType *ir_dtype_from_primitive(IRPrimitiveDataType primitive, int qualifier_flags, int storage_flags);
+
+IRDataType *ir_dtype_function(IRDataType *ret, int storage_flags);
+
+IRDataType *ir_dtype_pointer(IRDataType *to);
 
 void ir_dtype_wrap_pointer(IRDataType *ptr, IRDataType *to);
 

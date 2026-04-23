@@ -35,6 +35,32 @@ IRDataType *ir_dtype_from_primitive(IRPrimitiveDataType primitive, int qualifier
 	return dtype;
 }
 
+IRDataType *ir_dtype_function(IRDataType *ret, int storage_flags)
+{
+	IRDataType *dtype = calloc(1, sizeof(IRDataType));
+
+	assert(dtype != NULL);
+
+	dtype->type = IR_TYPE_FUNCTION;
+	dtype->storage_flags = storage_flags;
+	dtype->as.function.ret = ret;
+
+	return dtype;
+}
+
+IRDataType *ir_dtype_pointer(IRDataType *to)
+{
+	IRDataType *dtype = malloc(sizeof(IRDataType));
+
+	assert(dtype != NULL);
+
+	dtype->type = IR_TYPE_POINTER;
+	dtype->storage_flags = to->storage_flags;
+	dtype->as.pointer.to = to;
+
+	return dtype;
+}
+
 void ir_dtype_wrap_pointer(IRDataType *ptr, IRDataType *to)
 {
 	ptr->storage_flags = to->storage_flags;
@@ -307,6 +333,7 @@ void ir_emit(IROpCode op, const IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *a
 			if (dtype == NULL) code->dtype = ir_ctx->function_return_type;
 			if (result == NULL) code->result = ir_ssa_latest();
 		} break;
+		case IR_OC_CALL:
 		case IR_OC_IMM: {
 			if (result == NULL) code->result = ir_ssa_default(code->dtype);
 		} break;
