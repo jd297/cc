@@ -176,12 +176,13 @@ IRSSAEnt *ir_ssa_default(const IRDataType *dtype)
 	return ssa;
 }
 
-IRSSAEnt *ir_ssa_from_view(sv_t *view)
+IRSSAEnt *ir_ssa_from_view(sv_t view, const IRDataType *dtype)
 {
 	IRSSAEnt *ssa = calloc(1, sizeof(IRSSAEnt));
 
 	ssa->type = IR_ATYPE_VIEW;
 	ssa->as.view = view;
+	ssa->dtype = dtype;
 
 	list_insert(ir_ctx->ssa, list_end(ir_ctx->ssa), ssa);
 
@@ -545,7 +546,7 @@ static void ir_dump_ssa_ent(IRSSAEnt *ssa)
 			printf("IR_ATYPE_STR | %zu", ssa->as.str);
 		} break;
 		case IR_ATYPE_VIEW: {
-			printf("IR_ATYPE_VIEW | "SV_FMT, SV_PARAMS(ssa->as.view));
+			printf("IR_ATYPE_VIEW | "SV_FMT, SV_PARAMS(&ssa->as.view));
 		} break;
 		case IR_ATYPE_SSA: {
 			printf("IR_ATYPE_SSA | ");

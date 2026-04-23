@@ -220,7 +220,7 @@ struct IRSSAEnt {
 		size_t reg;
 		size_t *stack;
 		sv_t mem;
-		sv_t *view;
+		sv_t view;
 		IRSSAEnt *ssa;
 	} as;
 };
@@ -235,7 +235,7 @@ typedef struct {
 
 extern IRSSAEnt *ir_ssa_latest(void);
 extern IRSSAEnt *ir_ssa_default(const IRDataType *dtype);
-extern IRSSAEnt *ir_ssa_from_view(sv_t *view);
+extern IRSSAEnt *ir_ssa_from_view(sv_t view, const IRDataType *dtype);
 extern IRSSAEnt *ir_ssa_from_num(size_t num);
 extern IRSSAEnt *ir_ssa_from_str(size_t str);
 extern IRSSAEnt *ir_ssa_from_stack(size_t *stack, const IRDataType *dtype);

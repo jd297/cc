@@ -81,7 +81,7 @@ static ParseReturn parse_function_definition(void)
 
     parse_list_opt(parse_declaration);
 
-    ir_emit(IR_OC_FUNC_BEGIN, NULL, ir_ssa_from_view(&parse_function_entry->id), NULL, NULL);
+    ir_emit(IR_OC_FUNC_BEGIN, NULL, ir_ssa_from_view(parse_function_entry->id, NULL), NULL, NULL);
 
     parse_required(parse_compound_statement, ERROR);
 

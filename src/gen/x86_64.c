@@ -309,7 +309,7 @@ static int codegen_x86_64_fput_operand(FILE *output, IRPrimitiveDataType ptype, 
 		case IR_ATYPE_STR:
 			return fprintf(output, ".L.str.%zu(%%rip)", operand->as.str);
 		case IR_ATYPE_MEM:
-			return fprintf(output, SV_FMT"(%%rip)", SV_PARAMS(operand->as.view));
+			return fprintf(output, SV_FMT"(%%rip)", SV_PARAMS(&operand->as.view));
 		case IR_ATYPE_VIEW:
 			assert(0 && "TODO: not implemented: IR_ATYPE_VIEW");
 		default:
@@ -678,10 +678,10 @@ static void codegen_x86_64_func_begin(FILE *output, IRCode *code)
 	fputs("\t.text\n", output);
 
 	if ((code->dtype->storage_flags & IR_STORAGE_FLAG_STATIC) == 0) {
-		fprintf(output, "\t.globl " SV_FMT "\n", SV_PARAMS(code->result->as.view));
+		fprintf(output, "\t.globl " SV_FMT "\n", SV_PARAMS(&code->result->as.view));
 	}
 
-	fprintf(output, SV_FMT ":\n", SV_PARAMS(code->result->as.view));
+	fprintf(output, SV_FMT ":\n", SV_PARAMS(&code->result->as.view));
 	fputs("\tendbr64\n", output);
 	fputs("\tpushq\t%rbp\n", output);
 	fputs("\tmovq\t%rsp, %rbp\n", output);
@@ -996,7 +996,7 @@ static void codegen_x86_64_call(FILE *output, IRCode *code)
 	// TODO need to check more
 	
 	// TODO check type if static no @PLT!
-	fprintf(output, "\tcall\t"SV_FMT"@PLT\n", SV_PARAMS(code->arg1->as.view));
+	fprintf(output, "\tcall\t"SV_FMT"@PLT\n", SV_PARAMS(&code->arg1->as.view));
 	
 	// TODO check type
 	codegen_x86_64_mov(output, code->dtype->as.primitive, ir_ssa_from_reg(REGISTER_RETURN, code->dtype), code->result);
