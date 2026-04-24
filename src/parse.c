@@ -2198,7 +2198,7 @@ static ParseReturn parse_iteration_statement(void)
 			}
 
 			/* JMP STMT */
-			ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(for_label_stmt), NULL, NULL);
+			ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(for_label_stmt), NULL, NULL);
 
             if (yylex() != ';') {
                 goto ERROR;
@@ -2210,7 +2210,7 @@ static ParseReturn parse_iteration_statement(void)
             (void)parse_expression();
 
             /* JMP FOR BEGIN */
-            ir_emit(IR_OC_LABEL, NULL, ir_ssa_from_num(for_label_begin), NULL, NULL);
+            ir_emit(IR_OC_JMP, NULL, ir_ssa_from_num(for_label_begin), NULL, NULL);
 
             if (yylex() != ')') {
                 goto ERROR;
