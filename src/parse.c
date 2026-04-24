@@ -1589,13 +1589,32 @@ ERROR:
 }
 
 static ParseReturn parse_string(void)
-{ 
-	/* TODO REMOVE THIS FUNCTION, THE LOOKAHEAD IS TRIVIAL NOW */
-    if (yylex() == T_STRING) {
-    	return PARSE_OK;
+{
+	size_t label_str;
+	size_t str_len;
+	IRDataType *dtype;
+
+	if (yylex() != T_STRING) {
+    	goto ERROR;
     }
 
-/* ERROR: */
+/* OK: */
+	label_str = ir_ctx->label_str++;
+	
+	str_len = lex_tok.literal.sv.len + 1;
+	
+	dtype = ir_dtype_array(str_len,
+		ir_dtype_from_primitive(
+			codegen_get_primitive_data_type(IR_GENERIC_CHAR),
+			IR_QUALIFIER_FLAG_NONE, IR_STORAGE_FLAG_NONE));
+
+	ir_emit(IR_OC_STRING, dtype, ir_ssa_from_str(label_str), ir_ssa_from_literal(lex_tok.literal, dtype) , NULL);
+
+	ir_emit(IR_OC_LOAD, dtype, NULL, ir_ssa_from_str(label_str), NULL);
+
+	return PARSE_OK;
+
+ERROR:
     lex_setpos(lex_pos_last);
 
     return PARSE_ERROR;

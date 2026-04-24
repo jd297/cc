@@ -458,14 +458,14 @@ static void codegen_x86_64_bin_op(FILE *output, IRCode *code, const char *op)
 	/* optimization to avoid mutation of arg1 and setting the result correct right away */
 	if (code->result->type == IR_ATYPE_REG) {
 		if (code->result != code->arg1) {
-			codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg1, code->result);
+			codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg1, code->result);
 		}
 		
 		operand = code->result;
 	} else {
 		operand = ir_ssa_from_reg(REGISTER_TEMPORARY, code->dtype);
 
-		codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg1, operand);
+		codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg1, operand);
 	}
 
 	fprintf(output, "\t%s", op);
@@ -483,7 +483,7 @@ static void codegen_x86_64_bin_op(FILE *output, IRCode *code, const char *op)
 	fputs("\n", output);
 
 	if (code->result != operand) {
-		codegen_x86_64_mov(output, code->dtype->as.primitive, operand, code->result);
+		codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), operand, code->result);
 	}
 }
 
@@ -496,14 +496,14 @@ static void codegen_x86_64_unary_op(FILE *output, IRCode *code, const char *op)
 	/* optimization to avoid mutation of arg1 and setting the result correct right away */
 	if (code->result->type == IR_ATYPE_REG) {
 		if (code->result != code->arg1) {
-			codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg1, code->result);
+			codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg1, code->result);
 		}
 		
 		operand = code->result;
 	} else {
 		operand = ir_ssa_from_reg(REGISTER_TEMPORARY, code->dtype);
 
-		codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg1, operand);
+		codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg1, operand);
 	}
 
 	fprintf(output, "\t%s", op);
@@ -517,7 +517,7 @@ static void codegen_x86_64_unary_op(FILE *output, IRCode *code, const char *op)
 	fputs("\n", output);
 
 	if (code->result != operand) {
-		codegen_x86_64_mov(output, code->dtype->as.primitive, operand, code->result);
+		codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), operand, code->result);
 	}
 }
 
@@ -548,7 +548,7 @@ static void codegen_x86_64_logical_cmp(FILE *output, IRCode *code, const char *o
 	fputs("\n", output);
 
 	if (code->result != result) {
-		codegen_x86_64_mov(output, code->dtype->as.primitive, code->result, result);
+		codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->result, result);
 	}
 }
 
@@ -703,7 +703,7 @@ static void codegen_x86_64_func_end(FILE *output, IRCode *code)
 static void codegen_x86_64_imm(FILE *output, IRCode *code)
 {
 	fprintf(output, "\t# %s, %d\n", __FUNCTION__, __LINE__);
-	codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg1, code->result);
+	codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg1, code->result);
 }
 
 static void codegen_x86_64_sal(FILE *output, IRCode *code)
@@ -714,7 +714,7 @@ static void codegen_x86_64_sal(FILE *output, IRCode *code)
 	fprintf(output, "\t# %s, %d\n", __FUNCTION__, __LINE__);
 
 	if (code->arg2 != reg_counter) {
-		codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg2, reg_counter);
+		codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg2, reg_counter);
 
 		code->arg2 = reg_counter;
 	}
@@ -722,14 +722,14 @@ static void codegen_x86_64_sal(FILE *output, IRCode *code)
 	/* optimization to avoid mutation of arg1 and setting the result correct right away */
 	if (code->result->type == IR_ATYPE_REG) {
 		if (code->result != code->arg1) {
-			codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg1, code->result);
+			codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg1, code->result);
 		}
 		
 		operand = code->result;
 	} else {
 		operand = ir_ssa_from_reg(REGISTER_TEMPORARY, code->arg1->dtype);
 
-		codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg1, operand);
+		codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg1, operand);
 	}
 
 	fprintf(output, "\t%s", "sal");
@@ -747,7 +747,7 @@ static void codegen_x86_64_sal(FILE *output, IRCode *code)
 	fputs("\n", output);
 
 	if (code->result != operand) {
-		codegen_x86_64_mov(output, code->dtype->as.primitive, operand, code->result);
+		codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), operand, code->result);
 	}
 }
 
@@ -759,7 +759,7 @@ static void codegen_x86_64_sar(FILE *output, IRCode *code)
 	fprintf(output, "\t# %s, %d\n", __FUNCTION__, __LINE__);
 
 	if (code->arg2 != reg_counter) {
-		codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg2, reg_counter);
+		codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg2, reg_counter);
 
 		code->arg2 = reg_counter;
 	}
@@ -767,14 +767,14 @@ static void codegen_x86_64_sar(FILE *output, IRCode *code)
 	/* optimization to avoid mutation of arg1 and setting the result correct right away */
 	if (code->result->type == IR_ATYPE_REG) {
 		if (code->result != code->arg1) {
-			codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg1, code->result);
+			codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg1, code->result);
 		}
 		
 		operand = code->result;
 	} else {
 		operand = ir_ssa_from_reg(REGISTER_TEMPORARY, code->arg1->dtype);
 
-		codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg1, operand);
+		codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg1, operand);
 	}
 
 	fprintf(output, "\t%s", "sar");
@@ -792,7 +792,7 @@ static void codegen_x86_64_sar(FILE *output, IRCode *code)
 	fputs("\n", output);
 
 	if (code->result != operand) {
-		codegen_x86_64_mov(output, code->dtype->as.primitive, operand, code->result);
+		codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), operand, code->result);
 	}
 }
 
@@ -960,14 +960,14 @@ static void codegen_x86_64_store(FILE *output, IRCode *code)
 {
 	fprintf(output, "\t# %s, %d\n", __FUNCTION__, __LINE__);
 
-	codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg1, code->result);
+	codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg1, code->result);
 }
 
 static void codegen_x86_64_load(FILE *output, IRCode *code)
 {
 	fprintf(output, "\t# %s, %d\n", __FUNCTION__, __LINE__);
 
-	codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg1, code->result);
+	codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg1, code->result);
 }
 
 static void codegen_x86_64_param(FILE *output, IRCode *code)
@@ -981,7 +981,7 @@ static void codegen_x86_64_param(FILE *output, IRCode *code)
 	
 	param = codegen_x86_64_param_register(code->result->as.num, code->dtype);
 
-	codegen_x86_64_mov(output, code->dtype->as.primitive, code->arg1, param);
+	codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->arg1, param);
 }
 
 static void codegen_x86_64_call(FILE *output, IRCode *code)
@@ -999,7 +999,7 @@ static void codegen_x86_64_call(FILE *output, IRCode *code)
 	fprintf(output, "\tcall\t"SV_FMT"@PLT\n", SV_PARAMS(&code->arg1->as.view));
 	
 	// TODO check type
-	codegen_x86_64_mov(output, code->dtype->as.primitive, ir_ssa_from_reg(REGISTER_RETURN, code->dtype), code->result);
+	codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), ir_ssa_from_reg(REGISTER_RETURN, code->dtype), code->result);
 }
 
 static void codegen_x86_64_string(FILE *output, IRCode *code)
@@ -1018,5 +1018,5 @@ static void codegen_x86_64_ret(FILE *output, IRCode *code)
 {
 	fprintf(output, "\t# %s, %d\n", __FUNCTION__, __LINE__);
 
-	codegen_x86_64_mov(output, code->dtype->as.primitive, code->result, ir_ssa_from_reg(REGISTER_RETURN, code->dtype));
+	codegen_x86_64_mov(output, ir_dtype_to_primitive(code->dtype), code->result, ir_ssa_from_reg(REGISTER_RETURN, code->dtype));
 }

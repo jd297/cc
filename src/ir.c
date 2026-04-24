@@ -10,6 +10,26 @@
 
 IR_CTX *ir_ctx;
 
+IRPrimitiveDataType ir_dtype_to_primitive(const IRDataType *dtype)
+{
+	assert(dtype != NULL);
+
+	switch (dtype->type) {
+		case IR_TYPE_PRIMITIVE: {
+			return dtype->as.primitive;
+		} break;
+		case IR_TYPE_ARRAY:
+		case IR_TYPE_POINTER:
+		case IR_TYPE_FUNCTION: {
+			return IR_PTR_T;
+		} break;
+		case IR_TYPE_NONE: assert(0 && "SHOULD NOT BE IR_TYPE_NONE");
+		case IR_TYPE_ENUM: assert(0 && "SHOULD NOT BE IR_TYPE_ENUM");
+		case IR_TYPE_STRUCT: assert(0 && "SHOULD NOT BE IR_TYPE_STRUCT");
+		default: assert(0 && "NOT REACHABLE");
+	}
+}
+
 IRDataType *ir_dtype_assign(IRDataType *src)
 {
 	IRDataType *dtype = malloc(sizeof(IRDataType));
@@ -61,9 +81,25 @@ IRDataType *ir_dtype_pointer(IRDataType *to)
 	return dtype;
 }
 
+IRDataType *ir_dtype_array(size_t size, IRDataType *to)
+{
+	IRDataType *dtype = malloc(sizeof(IRDataType));
+
+	assert(dtype != NULL);
+
+	dtype->type = IR_TYPE_ARRAY;
+	dtype->storage_flags = to->storage_flags;
+	dtype->qualifier_flags = IR_QUALIFIER_FLAG_NONE;
+	dtype->as.array.to = to;
+	dtype->as.array.size = size;
+
+	return dtype;
+}
+
 void ir_dtype_wrap_pointer(IRDataType *ptr, IRDataType *to)
 {
 	ptr->storage_flags = to->storage_flags;
+	ptr->qualifier_flags = IR_QUALIFIER_FLAG_NONE;
 	ptr->as.pointer.to = to;
 }
 
@@ -333,6 +369,7 @@ void ir_emit(IROpCode op, const IRDataType *dtype, IRSSAEnt *result, IRSSAEnt *a
 			if (dtype == NULL) code->dtype = ir_ctx->function_return_type;
 			if (result == NULL) code->result = ir_ssa_latest();
 		} break;
+		case IR_OC_LOAD:
 		case IR_OC_CALL:
 		case IR_OC_IMM: {
 			if (result == NULL) code->result = ir_ssa_default(code->dtype);
@@ -531,7 +568,11 @@ static void ir_dtype_print_as(const IRDataType *dtype)
 			assert(0 && "TODO not implemented with (IR_TYPE_STRUCT)");
 		} break;
 		case IR_TYPE_ARRAY: {
-			assert(0 && "TODO not implemented with (IR_TYPE_ARRAY)");
+			printf("{ ARRAY | ");
+			printf("{ SIZE | %zu } | ", dtype->as.array.size);
+			printf("{ TO | ");
+			ir_dump_dtype(dtype->as.array.to);
+			printf("} }");
 		} break;
 		case IR_TYPE_POINTER: {
 			printf("{");

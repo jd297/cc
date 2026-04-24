@@ -110,6 +110,8 @@ struct IRDataType {
 	} as;
 };
 
+IRPrimitiveDataType ir_dtype_to_primitive(const IRDataType *dtype);
+
 IRDataType *ir_dtype_assign(IRDataType *src);
 
 IRDataType *ir_dtype_from_primitive(IRPrimitiveDataType primitive, int qualifier_flags, int storage_flags);
@@ -117,6 +119,10 @@ IRDataType *ir_dtype_from_primitive(IRPrimitiveDataType primitive, int qualifier
 IRDataType *ir_dtype_function(IRDataType *ret, int storage_flags);
 
 IRDataType *ir_dtype_pointer(IRDataType *to);
+
+IRDataType *ir_dtype_array(size_t size, IRDataType *to);
+
+IRDataType *ir_dtype_array(size_t size, IRDataType *to);
 
 void ir_dtype_wrap_pointer(IRDataType *ptr, IRDataType *to);
 
